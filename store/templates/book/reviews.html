@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% block title %}Reviews - {{ book.title }} - BookStore{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 20px;">
+    <div style="max-width: 900px; margin: 0 auto;">
+        <h1 style="margin-bottom: 10px; color: #0f172a;">Customer Reviews</h1>
+        <p style="color: #64748b; margin-bottom: 30px;">{{ book.title }} by {{ book.author }}</p>
+
+        <div style="display: grid; grid-template-columns: 300px 1fr; gap: 30px;">
+            <!-- Rating Summary -->
+            <div style="background: white; padding: 25px; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0; height: fit-content;">
+                <h2 style="margin-top: 0; color: #1e293b;">Ratings</h2>
+                
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <div style="font-size: 3rem; color: #2563eb; font-weight: 700;">{{ avg_rating }}</div>
+                    <div style="color: #f59e0b; font-size: 1.3rem; margin-bottom: 10px;">
+                        {% for i in "12345" %}
+                            {% if i|add:0 <= avg_rating %}⭐{% else %}☆{% endif %}
+                        {% endfor %}
+                    </div>
+                    <p style="color: #64748b; margin: 0;">Based on {{ total_ratings }} review{{ total_ratings|pluralize }}</p>
+                </div>
+
+                <!-- Rating Breakdown -->
+                {% for score, count in breakdown.items %}
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                        <span style="color: #64748b; font-size: 0.9rem;">{{ score }}★</span>
+                        <div style="flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; background: #f59e0b; width: {% if total_ratings %}{{ count|mul:100|div:total_ratings }}%{% else %}0%{% endif %};"></div>
+                        </div>
+                        <span style="color: #94a3b8; font-size: 0.9rem;">{{ count }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <a href="{% url 'add_rating_comment' book.id %}" style="display: block; padding: 12px 24px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: 700; text-align: center; margin-top: 20px;">Write a Review</a>
+            </div>
+
+            <!-- Reviews List -->
+            <div>
+                {% if comments %}
+                    <div style="display: grid; gap: 20px;">
+                        {% for comment in comments %}
+                        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
+                            <!-- Review Header -->
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="margin: 0 0 5px; color: #1e293b;">{{ comment.title }}</h3>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <div style="color: #f59e0b;">
+                                            {% for i in "12345" %}
+                                                {% if i|add:0 <= comment.rating.score %}⭐{% else %}☆{% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <span style="color: #64748b; font-size: 0.9rem;">{{ comment.rating.score }} out of 5</span>
+                                    </div>
+                                </div>
+                                {% if comment.is_verified_purchase %}
+                                <span style="background: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">✓ Verified</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Review Content -->
+                            <p style="margin: 0 0 15px; color: #1e293b; line-height: 1.6;">{{ comment.content }}</p>
+
+                            <!-- Review Footer -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                                <div style="color: #64748b; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;">
+                                    {% if comment.avatar_url %}
+                                    <img src="{{ comment.avatar_url }}" alt="{{ comment.customer.name }} avatar" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0;">
+                                    {% else %}
+                                    <span style="width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #f1f5f9; border: 1px solid #e2e8f0;">👤</span>
+                                    {% endif %}
+                                    <span><strong>{{ comment.customer.name }}</strong> · {{ comment.created_at|date:'M d, Y' }}</span>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <form method="POST" action="{% url 'mark_helpful' comment.id %}" style="margin: 0;">
+                                        {% csrf_token %}
+                                        <button type="submit" style="padding: 6px 12px; background: #f8fbff; color: #475569; border: 1px solid #dbe2f0; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.background='#eaf2ff'" onmouseout="this.style.background='#f8fbff';">
+                                            👍 Helpful ({{ comment.helpful_count }})
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                <div style="background: white; padding: 40px; border-radius: 14px; text-align: center; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
+                    <p style="color: #64748b; margin-bottom: 20px;">No reviews yet. Be the first to review this book!</p>
+                    <a href="{% url 'add_rating_comment' book.id %}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: 700;">Write a Review</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <a href="{% url 'book_detail' book.id %}" style="display: block; margin-top: 30px; padding: 12px 24px; background: #334155; color: white; border-radius: 10px; text-decoration: none; font-weight: 700; text-align: center; max-width: 220px;">← Back to Book</a>
+    </div>
+</div>
+{% endblock %}

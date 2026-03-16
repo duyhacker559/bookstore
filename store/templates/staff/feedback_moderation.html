@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Feedback Moderation - Staff Panel{% endblock %}
+{% block content %}
+<style>
+:root{--sb-w:240px;--blue:#2563eb;--blue-dark:#1e40af;--sidebar-bg:#0f172a;--sidebar-text:#94a3b8;}
+*{box-sizing:border-box;}
+.staff-wrap{display:flex;align-items:flex-start;gap:24px;max-width:1400px;margin:0 auto;padding:24px 20px 40px;}
+.staff-sidebar{width:var(--sb-w);flex:0 0 var(--sb-w);background:var(--sidebar-bg);display:flex;flex-direction:column;padding:16px 14px;border-radius:18px;position:sticky;top:130px;box-shadow:0 20px 45px rgba(15,23,42,.18);border:1px solid rgba(255,255,255,.06);}
+.staff-sidebar .brand{padding:8px 12px 16px;font-size:1.05rem;font-weight:700;color:#fff;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;}
+.staff-sidebar nav{padding:12px 0 0;display:grid;gap:4px;}
+.staff-sidebar nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;color:var(--sidebar-text);text-decoration:none;font-size:.93rem;font-weight:500;border-radius:12px;transition:all .18s;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.staff-sidebar nav a:hover{color:#fff;background:rgba(255,255,255,.05);}
+.staff-sidebar nav a.active{color:#fff;background:rgba(37,99,235,.18);box-shadow:inset 0 0 0 1px rgba(59,130,246,.15);}
+.staff-sidebar nav .nav-section{padding:14px 12px 4px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;}
+.staff-main{flex:1;min-width:0;}
+.page-header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+.page-title{margin:0;color:#0f172a;font-size:1.6rem;font-weight:700;}
+.page-sub{margin:0 0 14px;color:#64748b;}
+.filter-card,.table-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.04);}
+.filter-card{padding:14px;margin-bottom:16px;}
+.filter-grid{display:grid;grid-template-columns:1.2fr repeat(4,minmax(120px,1fr)) auto;gap:10px;}
+.filter-input,.filter-select{height:40px;border:1px solid #cbd5e1;border-radius:10px;padding:0 12px;font-size:.9rem;width:100%;}
+.btn{height:40px;border:none;background:#2563eb;color:#fff;border-radius:10px;padding:0 16px;font-weight:600;cursor:pointer;}
+.btn-outline{background:#fff;color:#334155;border:1px solid #cbd5e1;}
+.table-card{overflow:hidden;margin-bottom:18px;}
+.card-head{padding:14px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.card-title{margin:0;font-size:1rem;color:#0f172a;}
+.bulk-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.bulk-select{height:36px;border:1px solid #cbd5e1;border-radius:8px;padding:0 10px;}
+.bulk-btn{height:36px;border:none;background:#1e40af;color:#fff;border-radius:8px;padding:0 12px;font-weight:600;cursor:pointer;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 12px;background:#f8fafc;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;text-align:left;}
+td{padding:10px 12px;border-top:1px solid #f1f5f9;color:#334155;font-size:.89rem;vertical-align:top;}
+tr:hover td{background:#f8fafc;}
+.status-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:700;}
+.status-visible{background:#dcfce7;color:#166534;}
+.status-hidden{background:#fee2e2;color:#991b1b;}
+.status-verified{background:#dbeafe;color:#1e3a8a;}
+.status-unverified{background:#f1f5f9;color:#475569;}
+.muted{color:#64748b;font-size:.82rem;}
+.empty-note{margin:0;padding:14px 16px;color:#64748b;}
+.alert-stack{display:grid;gap:8px;margin-bottom:12px;}
+.alert-item{background:#f8fafc;border:1px solid #e2e8f0;color:#334155;border-radius:10px;padding:12px 14px;}
+@media(max-width:900px){.staff-wrap{flex-direction:column;padding:16px;}.staff-sidebar{width:100%;flex:1 1 auto;position:static;padding:10px 12px;}.staff-sidebar nav{display:flex;overflow-x:auto;padding:8px 0 0;}.staff-sidebar nav a{white-space:nowrap;padding:10px 14px;}.staff-sidebar .brand{padding:8px 6px 12px;}.staff-sidebar nav .nav-section{display:none;}.filter-grid{grid-template-columns:1fr;}}
+</style>
+
+<div class="staff-wrap">
+  <aside class="staff-sidebar">
+    <div class="brand">🏪 Staff Panel</div>
+    <nav>
+      <a href="{% url 'staff_home' %}">🏠 Dashboard</a>
+      <div class="nav-section">Catalogue</div>
+      <a href="{% url 'staff_books' %}">📚 Books</a>
+      <div class="nav-section">Orders</div>
+      <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
+      <div class="nav-section">Community</div>
+      <a href="{% url 'staff_feedback_moderation' %}" class="active">🛡 Moderation</a>
+      <a href="{% url 'staff_inbox' %}">📥 Inbox{% if staff_inbox_unread_count > 0 %} ({{ staff_inbox_unread_count }}){% endif %}</a>
+      <div class="nav-section">Insights</div>
+      <a href="{% url 'staff_analytics' %}">📊 Analytics</a>
+    </nav>
+  </aside>
+
+  <main class="staff-main">
+    <div class="page-header">
+      <h1 class="page-title">🛡 Feedback Moderation</h1>
+      <a href="{% url 'staff_home' %}" class="btn btn-outline" style="text-decoration:none;display:inline-flex;align-items:center;">Back to Dashboard</a>
+    </div>
+    <p class="page-sub">Filter ratings and comments, then apply bulk hide, unhide, or delete actions.</p>
+
+    {% if messages %}
+      <div class="alert-stack">
+        {% for message in messages %}
+          <div class="alert-item">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="filter-card">
+      <form method="get" class="filter-grid">
+        <input type="text" name="q" value="{{ query }}" class="filter-input" placeholder="Search customer, title, comment text...">
+        <select name="rating_score" class="filter-select">
+          <option value="">Any rating</option>
+          <option value="5" {% if rating_score == '5' %}selected{% endif %}>5 stars</option>
+          <option value="4" {% if rating_score == '4' %}selected{% endif %}>4 stars</option>
+          <option value="3" {% if rating_score == '3' %}selected{% endif %}>3 stars</option>
+          <option value="2" {% if rating_score == '2' %}selected{% endif %}>2 stars</option>
+          <option value="1" {% if rating_score == '1' %}selected{% endif %}>1 star</option>
+        </select>
+        <select name="rating_visibility" class="filter-select">
+          <option value="all" {% if rating_visibility == 'all' %}selected{% endif %}>Ratings: all</option>
+          <option value="visible" {% if rating_visibility == 'visible' %}selected{% endif %}>Ratings: visible</option>
+          <option value="hidden" {% if rating_visibility == 'hidden' %}selected{% endif %}>Ratings: hidden</option>
+        </select>
+        <select name="comment_visibility" class="filter-select">
+          <option value="all" {% if comment_visibility == 'all' %}selected{% endif %}>Comments: all</option>
+          <option value="visible" {% if comment_visibility == 'visible' %}selected{% endif %}>Comments: visible</option>
+          <option value="hidden" {% if comment_visibility == 'hidden' %}selected{% endif %}>Comments: hidden</option>
+        </select>
+        <select name="verified" class="filter-select">
+          <option value="all" {% if verified == 'all' %}selected{% endif %}>Purchase: all</option>
+          <option value="verified" {% if verified == 'verified' %}selected{% endif %}>Verified only</option>
+          <option value="unverified" {% if verified == 'unverified' %}selected{% endif %}>Unverified only</option>
+        </select>
+        <button type="submit" class="btn">Apply</button>
+      </form>
+    </div>
+
+    <div class="table-card">
+      <form method="post" onsubmit="return confirm('Apply action to selected ratings?');">
+      <div class="card-head">
+        <h2 class="card-title">Ratings ({{ ratings|length }})</h2>
+        <div class="bulk-tools">
+          {% csrf_token %}
+          <input type="hidden" name="target" value="rating">
+          <select name="action" class="bulk-select" required>
+            <option value="">Bulk action</option>
+            <option value="hide">Hide</option>
+            <option value="unhide">Unhide</option>
+            <option value="delete">Delete</option>
+          </select>
+          <button class="bulk-btn" type="submit">Apply</button>
+        </div>
+      </div>
+      {% if ratings %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" onclick="toggleAll(this, 'selected_ratings')"></th>
+                <th>Book</th>
+                <th>Customer</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in ratings %}
+              <tr>
+                <td><input type="checkbox" name="selected_ratings" value="{{ r.id }}"></td>
+                <td>{{ r.book.title }}</td>
+                <td>{{ r.customer.name }}</td>
+                <td>{{ r.score }} ★</td>
+                <td>
+                  {% if r.is_hidden %}
+                    <span class="status-pill status-hidden">Hidden</span>
+                  {% else %}
+                    <span class="status-pill status-visible">Visible</span>
+                  {% endif %}
+                </td>
+                <td class="muted">{{ r.updated_at|date:"Y-m-d H:i" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-note">No ratings match this filter.</p>
+      {% endif %}
+      </form>
+    </div>
+
+    <div class="table-card">
+      <form method="post" onsubmit="return confirm('Apply action to selected comments?');">
+      <div class="card-head">
+        <h2 class="card-title">Comments ({{ comments|length }})</h2>
+        <div class="bulk-tools">
+          {% csrf_token %}
+          <input type="hidden" name="target" value="comment">
+          <select name="action" class="bulk-select" required>
+            <option value="">Bulk action</option>
+            <option value="hide">Hide</option>
+            <option value="unhide">Unhide</option>
+            <option value="delete">Delete</option>
+          </select>
+          <button class="bulk-btn" type="submit">Apply</button>
+        </div>
+      </div>
+      {% if comments %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" onclick="toggleAll(this, 'selected_comments')"></th>
+                <th>Book</th>
+                <th>Customer</th>
+                <th>Title</th>
+                <th>Content</th>
+                <th>Flags</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in comments %}
+              <tr>
+                <td><input type="checkbox" name="selected_comments" value="{{ c.id }}"></td>
+                <td>{{ c.book.title }}</td>
+                <td>{{ c.customer.name }}</td>
+                <td>{{ c.title }}</td>
+                <td>{{ c.content|truncatechars:140 }}</td>
+                <td>
+                  {% if c.is_hidden %}
+                    <span class="status-pill status-hidden">Hidden</span>
+                  {% else %}
+                    <span class="status-pill status-visible">Visible</span>
+                  {% endif %}
+                  {% if c.is_verified_purchase %}
+                    <span class="status-pill status-verified">Verified</span>
+                  {% else %}
+                    <span class="status-pill status-unverified">Unverified</span>
+                  {% endif %}
+                </td>
+                <td class="muted">{{ c.updated_at|date:"Y-m-d H:i" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-note">No comments match this filter.</p>
+      {% endif %}
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+function toggleAll(master, name) {
+  document.querySelectorAll('input[name="' + name + '"]').forEach(function (cb) {
+    cb.checked = master.checked;
+  });
+}
+</script>
+{% endblock %}

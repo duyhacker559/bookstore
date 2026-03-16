@@ -1,0 +1,54 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 08. Comment & Rate Service Architecture
+' Render: plantuml 08_comment_rate_service.puml  →  08_comment_rate_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 08. Comment & Rate Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+actor "recommender-ai-service\n(reads scores)" as rec_svc
+
+package "comment-rate-service  :8010" {
+  component "URL Router\nurls.py" as router
+
+  package "commentrates app" {
+    component "CommentRateListCreateView\nGET  /comment-rates/\nPOST /comment-rates/" as view
+    component "CommentRateSerializer\n- customer_id (required)\n- book_id     (required)\n- comment     (text)\n- rating      (1–5 integer)" as serial
+    component "CommentRate Model\n──────────────\nid         : AutoField\ncustomer_id: IntegerField\nbook_id    : IntegerField\ncomment    : TextField\nrating     : IntegerField (1–5)" as model
+  }
+}
+
+database "commentrate-db\n(SQLite / PostgreSQL)" as db
+
+gw      --> router  : HTTP GET/POST /comment-rates/
+router  --> view
+view    --> serial  : validate payload
+serial  --> model   : save()
+model   --> db      : INSERT comment_rate
+
+view    --> gw      : 200 OK / 201 Created
+rec_svc ..> db      : reads interaction data\n(for recommendation model)
+
+note bottom of model
+  customer_id and book_id are logical
+  foreign keys (no direct DB join to
+  customer-service or book-service).
+  Rating range: 1 (worst) to 5 (best).
+  Used as input features by
+  recommender-ai-service.
+end note
+
+@enduml

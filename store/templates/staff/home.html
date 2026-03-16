@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Staff Dashboard - BookStore{% endblock %}
+{% block content %}
+<style>
+:root{--sb-w:240px;--blue:#2563eb;--blue-dark:#1e40af;--sidebar-bg:#0f172a;--sidebar-text:#94a3b8;--sidebar-active:#fff;}
+*{box-sizing:border-box;}
+.staff-wrap{display:flex;align-items:flex-start;gap:24px;max-width:1400px;margin:0 auto;padding:24px 20px 40px;}
+/* ── Sidebar ── */
+.staff-sidebar{width:var(--sb-w);flex:0 0 var(--sb-w);background:var(--sidebar-bg);display:flex;flex-direction:column;padding:16px 14px;border-radius:18px;position:sticky;top:130px;box-shadow:0 20px 45px rgba(15,23,42,.18);border:1px solid rgba(255,255,255,.06);}
+.staff-sidebar .brand{padding:8px 12px 16px;font-size:1.05rem;font-weight:700;color:#fff;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;}
+.staff-sidebar nav{padding:12px 0 0;display:grid;gap:4px;}
+.staff-sidebar nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;color:var(--sidebar-text);text-decoration:none;font-size:.93rem;font-weight:500;border-radius:12px;transition:all .18s;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.staff-sidebar nav a:hover{color:#fff;background:rgba(255,255,255,.05);}
+.staff-sidebar nav a.active{color:var(--sidebar-active);background:rgba(37,99,235,.18);box-shadow:inset 0 0 0 1px rgba(59,130,246,.15);}
+.staff-sidebar nav .nav-section{padding:14px 12px 4px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;}
+/* ── Main area ── */
+.staff-main{flex:1;min-width:0;background:transparent;padding:0;overflow-x:auto;}
+.page-title{font-size:1.6rem;font-weight:700;color:#0f172a;margin-bottom:4px;}
+.page-sub{color:#64748b;margin-bottom:28px;font-size:.95rem;}
+/* ── Stat Cards ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-bottom:32px;}
+.stat-card{background:#fff;border-radius:12px;padding:20px 22px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:6px;}
+.stat-card .label{font-size:.82rem;color:#64748b;font-weight:500;}
+.stat-card .value{font-size:2rem;font-weight:700;line-height:1;}
+.stat-card .hint{font-size:.78rem;color:#94a3b8;}
+/* ── Quick Actions ── */
+.actions-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;}
+.action-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-weight:600;font-size:.92rem;text-decoration:none;border:none;cursor:pointer;transition:all .18s;max-width:100%;white-space:normal;text-align:center;justify-content:center;}
+.action-btn-primary{background:var(--blue);color:#fff;}.action-btn-primary:hover{background:var(--blue-dark);}
+.action-btn-outline{background:#fff;color:#0f172a;border:1px solid #cbd5e1;}.action-btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+/* ── Table card ── */
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:28px;}
+.card-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#0f172a;display:flex;justify-content:space-between;align-items:center;}
+.card-header a{font-size:.85rem;color:var(--blue);text-decoration:none;font-weight:500;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 14px;background:#f8fafc;color:#475569;font-size:.82rem;text-align:left;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+td{padding:11px 14px;border-top:1px solid #f1f5f9;font-size:.9rem;color:#334155;}
+tr:hover td{background:#f8fafc;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;}
+.badge-pending{background:#fef3c7;color:#b45309;}
+.badge-processing{background:#dbeafe;color:#1e40af;}
+.badge-shipped{background:#e0f2fe;color:#0369a1;}
+.badge-delivered{background:#dcfce7;color:#15803d;}
+.badge-failed{background:#fee2e2;color:#dc2626;}
+@media(max-width:900px){.staff-wrap{flex-direction:column;padding:16px;}.staff-sidebar{width:100%;flex:1 1 auto;position:static;padding:10px 12px;}.staff-sidebar nav{display:flex;flex-wrap:nowrap;overflow-x:auto;padding:8px 0 0;}.staff-sidebar nav a{white-space:nowrap;padding:10px 14px;}.staff-sidebar .brand{padding:8px 6px 12px;}.staff-sidebar nav .nav-section{display:none;}.staff-main{padding:0;}.actions-row .action-btn{flex:1 1 calc(50% - 6px);}}
+@media(max-width:620px){.actions-row .action-btn{flex:1 1 100%;}}
+</style>
+
+<div class="staff-wrap">
+  <!-- Sidebar -->
+  <aside class="staff-sidebar">
+    <div class="brand">🏪 Staff Panel</div>
+    <nav>
+      <a href="{% url 'staff_home' %}" class="active">🏠 Dashboard</a>
+      <div class="nav-section">Catalogue</div>
+      <a href="{% url 'staff_books' %}">📚 Books</a>
+      <div class="nav-section">Orders</div>
+      <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
+      <div class="nav-section">Community</div>
+      <a href="{% url 'staff_feedback_moderation' %}">🛡 Moderation</a>
+      <a href="{% url 'staff_inbox' %}">📥 Inbox{% if staff_inbox_unread_count > 0 %} ({{ staff_inbox_unread_count }}){% endif %}</a>
+      <div class="nav-section">Insights</div>
+      <a href="{% url 'staff_analytics' %}">📊 Analytics</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="staff-main">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Welcome back. Here's what's happening today.</div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Shipments</div>
+        <div class="value" style="color:#0f172a;">{{ total_shipments }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending</div>
+        <div class="value" style="color:#d97706;">{{ pending_count }}</div>
+        <div class="hint">Need attention</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Processing</div>
+        <div class="value" style="color:#2563eb;">{{ processing_count }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Shipped</div>
+        <div class="value" style="color:#0ea5e9;">{{ shipped_count }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Delivered</div>
+        <div class="value" style="color:#16a34a;">{{ delivered_count }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Books</div>
+        <div class="value" style="color:#7c3aed;">{{ total_books }}</div>
+        {% if low_stock %}<div class="hint" style="color:#dc2626;">⚠ {{ low_stock }} low stock</div>{% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="actions-row">
+      <a href="{% url 'staff_manage_shipments' %}" class="action-btn action-btn-primary">🚚 Manage Shipments</a>
+      <a href="{% url 'staff_books' %}" class="action-btn action-btn-outline">📚 Manage Books</a>
+      <a href="{% url 'staff_feedback_moderation' %}" class="action-btn action-btn-outline">🛡 Moderate Feedback</a>
+      <a href="{% url 'staff_inbox' %}" class="action-btn action-btn-outline">📥 Customer Inbox</a>
+      <a href="{% url 'staff_books' %}?action=add" class="action-btn action-btn-outline">➕ Add New Book</a>
+      <a href="{% url 'staff_analytics' %}" class="action-btn action-btn-outline">📊 View Analytics</a>
+    </div>
+
+    <!-- Recent Shipments -->
+    <div class="card">
+      <div class="card-header">
+        Recent Shipments
+        <a href="{% url 'staff_manage_shipments' %}">View all →</a>
+      </div>
+      {% if recent_shipments %}
+      <table>
+        <thead>
+          <tr>
+            <th>Shipment</th><th>Order</th><th>Method</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in recent_shipments %}
+          <tr>
+            <td>#{{ s.id }}</td>
+            <td>#{{ s.order.id }}</td>
+            <td>{{ s.method_name }}</td>
+            <td>
+              <span class="badge badge-{{ s.status|lower }}">{{ s.status }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p style="padding:16px;color:#64748b;margin:0;">No shipments yet.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}
+

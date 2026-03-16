@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+{% block title %}Account Settings - BookStore{% endblock %}
+
+{% block content %}
+<style>
+.settings-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.settings-header {
+    margin-bottom: 24px;
+}
+
+.settings-header h1 {
+    margin: 0 0 8px;
+    color: #0f172a;
+    font-size: 1.75rem;
+}
+
+.settings-header p {
+    margin: 0;
+    color: #64748b;
+}
+
+.settings-summary {
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 14px;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #dbe2f0;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+    padding: 16px;
+    margin-bottom: 18px;
+}
+
+.settings-summary-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    object-fit: cover;
+    background: #f1f5f9;
+}
+
+.settings-summary-name {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.settings-summary-meta {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 0.92rem;
+}
+
+.settings-nav {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 24px;
+}
+
+.settings-nav button {
+    background: none;
+    border: none;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #64748b;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+}
+
+.settings-nav button:hover {
+    color: #1d4ed8;
+}
+
+.settings-nav button.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+}
+
+.settings-section {
+    display: none;
+    background: #fff;
+    border: 1px solid #dbe2f0;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+    padding: 24px;
+}
+
+.settings-section.active {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-group .help-text {
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e1;
+}
+
+.back-link {
+    display: inline-block;
+    color: #2563eb;
+    text-decoration: none;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 16px;
+}
+
+.section-description {
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+.password-requirements {
+    background: #f1f5f9;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+.password-requirements ul {
+    margin: 8px 0 0 20px;
+    padding: 0;
+}
+
+.password-requirements li {
+    margin-bottom: 4px;
+}
+
+.avatar-preview {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #cbd5e1;
+    margin-bottom: 10px;
+}
+
+.avatar-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.password-match {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.password-match.valid {
+    color: #166534;
+}
+
+.password-match.invalid {
+    color: #b91c1c;
+}
+
+.settings-message {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.settings-message-success {
+    background: #d1fae5;
+    border: 1px solid #10b981;
+    color: #065f46;
+}
+
+.settings-message-error {
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
+}
+
+@media (max-width: 640px) {
+    .settings-summary {
+        grid-template-columns: 1fr;
+        text-align: center;
+        justify-items: center;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<div class="settings-container">
+    <a href="{% url 'customer_home' %}" class="back-link">← Back to Profile</a>
+    
+    <div class="settings-header">
+        <h1>Account Settings</h1>
+        <p>Manage your profile information and security preferences</p>
+    </div>
+
+    <div class="settings-summary">
+        {% if user_profile and user_profile.avatar %}
+        <img src="{{ user_profile.avatar.url }}" alt="Profile avatar" class="settings-summary-avatar" id="summary-avatar">
+        {% else %}
+        <img src="https://ui-avatars.com/api/?name={{ customer.name|urlencode }}&background=e2e8f0&color=334155" alt="Profile avatar" class="settings-summary-avatar" id="summary-avatar">
+        {% endif %}
+        <div>
+            <p class="settings-summary-name">{{ customer.name|default:user.username }}</p>
+            <p class="settings-summary-meta">{{ customer.email|default:user.email }}</p>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="settings-message {% if message.tags == 'success' %}settings-message-success{% else %}settings-message-error{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="settings-nav">
+        <button type="button" class="active" data-settings-tab="profile">Profile Information</button>
+        <button type="button" data-settings-tab="password">Password & Security</button>
+    </div>
+
+    <!-- Profile Information Section -->
+    <div id="profile-section" class="settings-section active">
+        <h2 class="section-title">Profile Information</h2>
+        <p class="section-description">Update your personal details and contact information</p>
+
+        <form method="post" action="{% url 'customer_update_profile' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="avatar">Profile Photo</label>
+                {% if user_profile and user_profile.avatar %}
+                <img src="{{ user_profile.avatar.url }}" alt="Current profile photo" class="avatar-preview" id="avatar-preview">
+                {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ customer.name|urlencode }}&background=e2e8f0&color=334155" alt="Current profile photo" class="avatar-preview" id="avatar-preview">
+                {% endif %}
+                <input type="file" id="avatar" name="avatar" accept="image/*">
+                <div class="help-text">Upload JPG, PNG, WEBP, or GIF. Maximum 2MB.</div>
+                {% if user_profile and user_profile.avatar %}
+                <div class="avatar-actions" style="margin-top:10px;">
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                        formaction="{% url 'customer_remove_avatar' %}"
+                        formmethod="post"
+                    >
+                        Remove Current Photo
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="{{ user.username }}" autocomplete="username" minlength="3" pattern="[A-Za-z0-9@.+\-_]+" required>
+                <div class="help-text">Only letters, numbers, and @/./+/-/_ characters. Min 3 characters.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" value="{{ customer.name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" value="{{ customer.email }}" required>
+                <div class="help-text">This email will be used for order notifications</div>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" value="{{ customer.phone|default:'' }}" placeholder="+1 (555) 123-4567">
+                <div class="help-text">Optional - for delivery contact</div>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Delivery Address</label>
+                <textarea id="address" name="address" placeholder="Enter your full address including street, city, state, and ZIP code">{{ customer.address|default:'' }}</textarea>
+                <div class="help-text">Your default delivery address for orders</div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'customer_home' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Password & Security Section -->
+    <div id="password-section" class="settings-section">
+        <h2 class="section-title">Password & Security</h2>
+        <p class="section-description">Keep your account secure by using a strong password</p>
+
+        <form method="post" action="{% url 'customer_change_password' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="current_password">Current Password</label>
+                <input type="password" id="current_password" name="current_password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm New Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+                <div id="password-match" class="password-match">Passwords must match.</div>
+            </div>
+
+            <div class="password-requirements">
+                <strong>Password Requirements:</strong>
+                <ul>
+                    <li>At least 8 characters long</li>
+                    <li>Mix of uppercase and lowercase letters (recommended)</li>
+                    <li>Include numbers and special characters (recommended)</li>
+                </ul>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Change Password</button>
+                <button type="reset" class="btn btn-secondary">Clear</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('[data-settings-tab]');
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatar-preview');
+    const summaryAvatar = document.getElementById('summary-avatar');
+    const newPassword = document.getElementById('new_password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const passwordMatch = document.getElementById('password-match');
+
+    function switchTab(tabName) {
+        tabs.forEach(function (tab) {
+            tab.classList.toggle('active', tab.dataset.settingsTab === tabName);
+        });
+
+        document.querySelectorAll('.settings-section').forEach(function (section) {
+            section.classList.remove('active');
+        });
+
+        const target = document.getElementById(tabName + '-section');
+        if (target) {
+            target.classList.add('active');
+        }
+        window.location.hash = 'tab-' + tabName;
+    }
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            switchTab(this.dataset.settingsTab);
+        });
+    });
+
+    if (avatarInput && avatarPreview) {
+        avatarInput.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                avatarPreview.src = e.target.result;
+                if (summaryAvatar) {
+                    summaryAvatar.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function updatePasswordMatch() {
+        if (!newPassword || !confirmPassword || !passwordMatch) return;
+        const a = newPassword.value;
+        const b = confirmPassword.value;
+        passwordMatch.classList.remove('valid', 'invalid');
+        if (!a && !b) {
+            passwordMatch.textContent = 'Passwords must match.';
+            return;
+        }
+        if (a === b) {
+            passwordMatch.textContent = 'Passwords match.';
+            passwordMatch.classList.add('valid');
+            return;
+        }
+        passwordMatch.textContent = 'Passwords do not match.';
+        passwordMatch.classList.add('invalid');
+    }
+
+    if (newPassword && confirmPassword) {
+        newPassword.addEventListener('input', updatePasswordMatch);
+        confirmPassword.addEventListener('input', updatePasswordMatch);
+    }
+
+    const hashTab = (window.location.hash || '').replace('#tab-', '').trim();
+    if (hashTab === 'password' || hashTab === 'profile') {
+        switchTab(hashTab);
+    } else {
+        switchTab('profile');
+    }
+});
+</script>
+
+{% endblock %}

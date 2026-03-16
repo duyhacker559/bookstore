@@ -1,0 +1,61 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 05. Order Service Architecture
+' Render: plantuml 05_order_service.puml  →  05_order_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 05. Order Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+
+package "order-service  :8007" {
+  component "URL Router\nurls.py" as router
+
+  package "orders app" {
+    component "OrderListCreateView\nGET  /orders/\nPOST /orders/" as view
+    component "OrderSerializer\n- customer_id (required)\n- status (default: pending)" as serial
+    component "Order Model\n──────────────\nid         : AutoField\ncustomer_id: IntegerField\nstatus     : CharField\n  pending | processing\n  completed | cancelled" as model
+  }
+}
+
+database "order-db\n(SQLite / PostgreSQL)" as db
+
+package "pay-service  :8008" {
+  component "POST /payments/\n(planned orchestration)" as pay_ep
+}
+package "ship-service  :8009" {
+  component "POST /shipments/\n(planned orchestration)" as ship_ep
+}
+
+gw     --> router : HTTP GET/POST /orders/
+router --> view
+view   --> serial : validate payload
+serial --> model  : save()
+model  --> db     : INSERT order
+
+view   ..> pay_ep  : trigger payment\n(next iteration)
+view   ..> ship_ep : trigger shipment\n(next iteration)
+
+view   --> gw : 200 OK / 201 Created
+
+note bottom of view
+  Current: order-service stores order independently.
+  Planned: after order creation, service orchestrates
+  POST /payments/ and POST /shipments/ automatically.
+  Async domain events (OrderCreated) are the
+  recommended production approach.
+end note
+
+@enduml

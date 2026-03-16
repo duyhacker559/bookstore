@@ -1,0 +1,1803 @@
+{% extends "base.html" %}
+
+{% block title %}Our Book Collection{% endblock %}
+
+{% block content %}
+
+<style>
+/* ============================================
+   IMPROVED STYLES WITH MODERN SEARCH BAR
+   ============================================ */
+
+* {
+    box-sizing: border-box;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Hero Section with Search */
+.hero-section {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    padding: 60px 20px 80px;
+    text-align: center;
+    margin-bottom: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.hero-title {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    margin-bottom: 20px;
+    color: #1e293b;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.12);
+    color: #1e40af;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.hero-subtitle {
+    color: #64748b;
+    font-size: clamp(1rem, 2.5vw, 1.15rem);
+    margin-bottom: 40px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+/* Modern Search Bar */
+.hero-search-container {
+    max-width: 740px;
+    margin: 0 auto 28px;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.13), 0 2px 8px rgba(0,0,0,0.06);
+    border: 2px solid #e2e8f0;
+    padding: 6px 6px 6px 20px;
+    transition: all 0.3s ease;
+    gap: 8px;
+}
+
+.hero-search-wrapper:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.22), 0 0 0 4px rgba(37,99,235,0.08);
+    transform: translateY(-2px);
+}
+
+.hero-search-icon {
+    color: #64748b;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    transition: color 0.25s ease;
+    user-select: none;
+}
+
+.hero-search-wrapper:focus-within .hero-search-icon {
+    color: #2563eb;
+}
+
+.hero-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 14px 8px;
+    font-size: 1.05rem;
+    color: #1e293b;
+    background: transparent;
+    min-width: 0;
+}
+
+.hero-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.hero-search-btn {
+    padding: 13px 28px;
+    background: linear-gradient(135deg, #1e40af 0%, #172554 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.01em;
+}
+
+.hero-search-btn:hover {
+    background: linear-gradient(135deg, #172554 0%, #0f172a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
+}
+
+.hero-search-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.hero-search-hint {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 10px;
+    min-height: 1.2em;
+    transition: color 0.2s;
+}
+
+.hero-search-hint.has-results {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+/* Quick Search Tags */
+.quick-search {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.quick-search-label {
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.quick-tag {
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.quick-tag:hover {
+    background: #1e40af;
+    color: white;
+    border-color: #1e40af;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
+}
+
+.quick-tag.active {
+    background: #1e40af;
+    color: white;
+    border-color: #1e40af;
+}
+
+.hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.btn-outline-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    border: 1px solid #1e40af;
+    text-decoration: none;
+    color: #1e40af;
+    font-weight: 600;
+    background: white;
+    transition: all 0.25s ease;
+}
+
+.btn-outline-hero:hover {
+    border-color: #172554;
+    background: #eff6ff;
+    color: #172554;
+    transform: translateY(-1px);
+}
+
+.hero-insights {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.insight-card {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: left;
+}
+
+.insight-card strong {
+    display: block;
+    font-size: 1.1rem;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.insight-card span {
+    color: #64748b;
+    font-size: 0.88rem;
+}
+
+.btn-primary {
+    display: inline-block;
+    padding: 14px 32px !important;
+    font-size: 1.05rem !important;
+    background: #2563eb !important;
+    color: white !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    background: #1e40af !important;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Features Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 40px 30px;
+    background: white;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    border-color: #2563eb;
+}
+
+.feature-icon {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.feature-title {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.feature-description {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/* Main Layout */
+.main-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.main-layout.home-layout {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 1024px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Sidebar */
+.sidebar {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        position: static;
+    }
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 1.1rem;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #cbd5e1;
+}
+
+.filter-header-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.filter-global-actions {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.filter-global-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 9px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.filter-global-btn:hover {
+    border-color: #2563eb;
+    color: #1e40af;
+    background: #eff6ff;
+}
+
+.active-filter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    width: 100%;
+    min-width: 0;
+}
+
+.active-filter-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 7px 11px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+}
+
+.active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.price-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.price-preset-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.price-preset-btn:hover {
+    border-color: #2563eb;
+    color: #1e40af;
+    background: #eff6ff;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.filter-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.filter-btn.primary {
+    border-color: #1e40af;
+    background: #1e40af;
+    color: #fff;
+}
+
+.filter-btn.primary:hover {
+    background: #172554;
+    border-color: #172554;
+}
+
+.filter-btn:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+
+.filter-section {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.filter-section:last-child {
+    border-bottom: none;
+}
+
+.filter-section h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-section-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.filter-section-toggle h4 {
+    margin: 0;
+}
+
+.filter-toggle-icon {
+    color: #64748b;
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+}
+
+.filter-section.collapsed .filter-section-body {
+    display: none;
+}
+
+.filter-section.collapsed .filter-toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.filter-option {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    font-size: 0.95rem;
+    color: #475569;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.filter-option-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.filter-option-main span {
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.filter-option .option-count {
+    font-size: 0.78rem;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.filter-option:hover {
+    color: #2563eb;
+    border-color: #bfdbfe;
+    background: #f8fbff;
+}
+
+.filter-option.selected {
+    color: #1e40af;
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.filter-option.selected .option-count {
+    color: #1e40af;
+    border-color: #93c5fd;
+    background: #dbeafe;
+}
+
+.filter-option input[type="checkbox"],
+.filter-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #2563eb;
+}
+
+/* Mobile Search Toggle */
+.mobile-search-toggle {
+    display: none;
+    width: 100%;
+    padding: 12px 20px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+@media (max-width: 768px) {
+    .mobile-search-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .filter-section {
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+    }
+
+    .filter-global-actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+
+    .filter-section-toggle {
+        margin-bottom: 8px;
+    }
+}
+
+/* Content Area */
+.content-area {
+    min-width: 0;
+}
+
+.controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+    .controls-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.results-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.clear-filters-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.clear-filters-btn:hover {
+    background: #fecaca;
+    transform: translateY(-1px);
+}
+
+.controls-bar select {
+    padding: 10px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    color: #475569;
+    font-size: 0.95rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 220px;
+}
+
+@media (max-width: 768px) {
+    .controls-bar select {
+        width: 100%;
+    }
+}
+
+.controls-bar select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Grid Container */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.recommendations-wrap {
+    margin-bottom: 36px;
+}
+
+.recommendations-head {
+    margin-bottom: 18px;
+}
+
+.recommendations-head h3 {
+    font-size: 1.4rem;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.recommendations-head p {
+    color: #64748b;
+}
+
+.home-results-info {
+    margin-bottom: 24px;
+    padding: 16px 18px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* Book Card */
+.card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    border-color: #2563eb;
+}
+
+.book-cover {
+    width: 100%;
+    height: 300px;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.book-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    z-index: 2;
+}
+
+.book-cover.has-image::before {
+    display: none;
+}
+
+.book-cover::before {
+    content: '📚';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    opacity: 0.3;
+    transition: all 0.3s ease;
+}
+
+.card:hover .book-cover::before {
+    transform: translate(-50%, -50%) scale(1.2) rotate(10deg);
+    opacity: 0.5;
+}
+
+.book-cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 100%);
+}
+
+.card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    min-height: 2.8em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-title a {
+    text-decoration: none;
+    color: #1e293b;
+    transition: color 0.15s ease;
+}
+
+.card-title a:hover {
+    color: #2563eb;
+}
+
+.card-author {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.card-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+}
+
+.card-desc {
+    color: #64748b;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    margin-bottom: 12px;
+    min-height: 2.6em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.star-rating {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 1rem;
+}
+
+.star-rating span:first-child {
+    color: #f59e0b;
+    letter-spacing: 2px;
+}
+
+.star-rating span:last-child {
+    color: #94a3b8;
+    margin-left: 6px;
+    font-size: 0.85rem;
+}
+
+.card-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2563eb;
+    margin-bottom: 8px;
+    margin-top: auto;
+}
+
+.card-stock {
+    margin-bottom: 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    width: fit-content;
+}
+
+.card-stock.in-stock {
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.card-stock.low-stock {
+    color: #9a3412;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+
+.card-stock.out-of-stock {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.btn-add {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.btn-add:hover {
+    background: #1e40af;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #cbd5e1;
+}
+
+.empty-state h3 {
+    color: #475569;
+    margin-bottom: 16px;
+    font-size: 1.3rem;
+}
+
+.empty-state a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.empty-state a:hover {
+    text-decoration: underline;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 50px;
+    flex-wrap: wrap;
+}
+
+.pagination a,
+.pagination span {
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #475569;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.pagination a:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+}
+
+.pagination .current-page {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 40px 20px 60px;
+    }
+    
+    .hero-search-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        padding: 2px 8px;
+        border: 1.5px solid #d0d7de;
+        border-radius: 999px;
+
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+
+        max-width: 520px;
+    }
+
+    .hero-search-wrapper:focus-within {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+
+    .hero-search-icon {
+        font-size: 16px;
+        opacity: 0.6;
+        padding-left: 6px;
+    }
+
+    .hero-search-input {
+        border: none;
+        outline: none;
+        flex: 1;
+
+        font-size: 14px;
+        padding: 8px 6px;
+        background: transparent;
+    }
+
+    .hero-search-input::placeholder {
+        color: #9aa4af;
+    }
+
+    .hero-search-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        border: none;
+        background: #2563eb;
+        color: white;
+
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        cursor: pointer;
+
+        transition: background 0.2s ease;
+    }
+
+    .hero-search-btn:hover {
+        background: #1e40af;
+    }
+
+        
+    .quick-search {
+        gap: 8px;
+    }
+    
+    .quick-tag {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .hero-insights {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+{% if not catalog_only %}
+<!-- Hero Section with Search -->
+<div class="hero-section">
+    <div class="container">
+        <div class="hero-eyebrow">Personalized Picks</div>
+        <h1 class="hero-title">Discover Your Next Great Read</h1>
+        <p class="hero-subtitle">
+            Explore editor favorites, trending books, and reader-loved titles in one friendly place. Start with recommendations, then jump into the full catalog when you are ready.
+        </p>
+        
+        <!-- Modern Search Bar -->
+        <div class="hero-search-container">
+            <div class="hero-search-wrapper" id="heroSearchWrapper">
+                <span class="hero-search-icon">🔍</span>
+                <input type="text"
+                       id="heroSearchInput"
+                       class="hero-search-input"
+                       placeholder="Search by title, author, or ISBN..."
+                       value="{{ q|default:'' }}"
+                       autocomplete="off"
+                       spellcheck="false">
+                <button type="button" id="heroSearchBtn" class="hero-search-btn">
+                    Search
+                </button>
+            </div>
+            <p class="hero-search-hint" id="heroSearchHint">{% if q %}Ready to open Books for &ldquo;{{ q }}&rdquo;{% else %}Type a title and press Enter to open Books page{% endif %}</p>
+
+            <!-- Quick Search Tags -->
+            <div class="quick-search">
+                <span class="quick-search-label">Try:</span>
+                <a href="{% url 'book_catalog' %}?q=fiction"    class="quick-tag {% if q == 'fiction'    %}active{% endif %}" data-q="fiction">Fiction</a>
+                <a href="{% url 'book_catalog' %}?q=science"    class="quick-tag {% if q == 'science'    %}active{% endif %}" data-q="science">Science</a>
+                <a href="{% url 'book_catalog' %}?q=biography"  class="quick-tag {% if q == 'biography'  %}active{% endif %}" data-q="biography">Biography</a>
+                <a href="{% url 'book_catalog' %}?q=bestseller" class="quick-tag {% if q == 'bestseller' %}active{% endif %}" data-q="bestseller">Bestseller</a>
+            </div>
+        </div>
+
+        <div class="hero-actions">
+            <a href="#recommendations" class="btn btn-primary">⭐ Start With Recommendations</a>
+            <a href="{% url 'book_catalog' %}" class="btn-outline-hero">📚 Open Books Catalog</a>
+        </div>
+
+        <div class="hero-insights">
+            <div class="insight-card">
+                <strong>{{ total_books }}+</strong>
+                <span>Books available to explore</span>
+            </div>
+            <div class="insight-card">
+                <strong>Top Rated</strong>
+                <span>Home feed prioritizes highly rated picks</span>
+            </div>
+            <div class="insight-card">
+                <strong>Fast Discovery</strong>
+                <span>Search instantly without leaving this page</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Why Choose BookStore Section -->
+<div class="container" style="margin-bottom: 80px;">
+    <h2 style="text-align: center; font-size: 2rem; margin-bottom: 50px; color: #1e293b;">Why Choose BookStore?</h2>
+
+    <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+            <div class="feature-icon">🚚</div>
+            <h3 class="feature-title">Fast Delivery</h3>
+            <p class="feature-description">
+                Get your books delivered quickly with our express shipping options. Free shipping on orders over $30.
+            </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <h3 class="feature-title">Vast Collection</h3>
+            <p class="feature-description">
+                Browse through thousands of books across all genres, from classic literature to modern bestsellers.
+            </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+            <div class="feature-icon">⭐</div>
+            <h3 class="feature-title">Expert Reviews</h3>
+            <p class="feature-description">
+                Read authentic reviews from book lovers and experts to help you choose your next great read.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div id="book-results">
+{% if not catalog_only and recommended_books %}
+<div class="container recommendations-wrap" id="recommendations">
+    <div class="recommendations-head">
+        <h3>Recommended For You</h3>
+        <p>Top-rated picks readers are loving right now.</p>
+    </div>
+
+    <div class="grid-container" style="margin-bottom: 10px;">
+        {% for book in recommended_books %}
+        <div class="card">
+            <a href="/{{ book.id }}/" style="display:block; text-decoration:none;">
+                <div class="book-cover {% if book.cover_image %}has-image{% endif %}">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image }}" alt="{{ book.title }} cover">
+                    {% endif %}
+                </div>
+            </a>
+
+            <div class="card-body">
+                <h3 class="card-title">
+                    <a href="/{{ book.id }}/">{{ book.title|truncatechars:40 }}</a>
+                </h3>
+                <p class="card-author">by {{ book.author }}</p>
+
+                <div class="star-rating">
+                    <span>
+                        {% if book.rating >= 1 %}★{% else %}☆{% endif %}{% if book.rating >= 2 %}★{% else %}☆{% endif %}{% if book.rating >= 3 %}★{% else %}☆{% endif %}{% if book.rating >= 4 %}★{% else %}☆{% endif %}{% if book.rating >= 5 %}★{% else %}☆{% endif %}
+                    </span>
+                    <span>({{ book.review_count }})</span>
+                </div>
+
+                <div class="card-price">${{ book.price }}</div>
+
+                <a href="/add/{{ book.id }}/" class="btn-add">
+                    Add to Cart
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Our Book Collection Section Header -->
+<div class="container" id="books" style="margin-bottom: 20px;">
+    <h2 style="font-size: 2rem; margin-bottom: 10px; color: #1e293b;">Our Book Collection</h2>
+    <p style="color: #64748b; margin-bottom: 30px;">Discover thousands of books across all genres</p>
+</div>
+
+<div class="main-layout {% if not catalog_only %}home-layout{% endif %}">
+    {% if catalog_only %}
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="filter-header">
+            <div class="filter-header-group">
+                <span class="filter-title"><span>🔽</span> Filters</span>
+            </div>
+        </div>
+
+        <form method="get" id="filterForm">
+            <!-- Preserve search query -->
+            {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+
+            {% if selected_categories or min_price or max_price or min_rating or in_stock == "1" %}
+            <div class="active-filter-summary">Applied filters: {{ active_filters_count }}</div>
+            <div class="active-filter-list">
+                {% for selected_cat in selected_categories %}
+                <span class="active-filter-chip">{{ selected_cat }}</span>
+                {% endfor %}
+                {% if min_price %}<span class="active-filter-chip">Min: ${{ min_price }}</span>{% endif %}
+                {% if max_price %}<span class="active-filter-chip">Max: ${{ max_price }}</span>{% endif %}
+                {% if min_rating %}<span class="active-filter-chip">{{ min_rating }}★ & up</span>{% endif %}
+                {% if in_stock == "1" %}<span class="active-filter-chip">In stock only</span>{% endif %}
+            </div>
+            {% endif %}
+
+           <div class="filter-section">
+                <button type="button" class="filter-section-toggle" data-section-toggle>
+                    <h4>Categories</h4>
+                    <span class="filter-toggle-icon">▾</span>
+                </button>
+                <div class="filter-section-body">
+                    {% for category, count in category_counts.items %}
+                    <div class="filter-option {% if category in selected_categories %}selected{% endif %}">
+                        <label class="filter-option-main">
+                            <input type="checkbox"
+                                name="cat"
+                                value="{{ category }}"
+                                {% if category in selected_categories %}checked{% endif %}
+                                onchange="filterChanged()">
+                            <span>{{ category }}</span>
+                        </label>
+                        <span class="option-count">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <button type="button" class="filter-section-toggle" data-section-toggle>
+                    <h4>Price Range</h4>
+                    <span class="filter-toggle-icon">▾</span>
+                </button>
+                <div class="filter-section-body">
+                    <div style="display:flex; gap:10px; margin-bottom: 15px;">
+                        <input type="number" name="min_price" value="{{ min_price }}" placeholder="Min"
+                            class="filter-price-input"
+                            style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size: 0.9rem;">
+                        <input type="number" name="max_price" value="{{ max_price }}" placeholder="Max"
+                            class="filter-price-input"
+                            style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size: 0.9rem;">
+                    </div>
+                    <div class="price-presets">
+                        <button type="button" class="price-preset-btn" data-min="" data-max="">Any</button>
+                        <button type="button" class="price-preset-btn" data-min="0" data-max="15">Under $15</button>
+                        <button type="button" class="price-preset-btn" data-min="15" data-max="30">$15 - $30</button>
+                        <button type="button" class="price-preset-btn" data-min="30" data-max="">$30+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <button type="button" class="filter-section-toggle" data-section-toggle>
+                    <h4>Rating</h4>
+                    <span class="filter-toggle-icon">▾</span>
+                </button>
+                <div class="filter-section-body">
+                    <div class="filter-option {% if min_rating == "5" %}selected{% endif %}">
+                        <label class="filter-option-main">
+                            <input type="radio"
+                                name="min_rating"
+                                value="5"
+                                {% if min_rating == "5" %}checked{% endif %}
+                                onchange="filterChanged()">
+                            <span>⭐⭐⭐⭐⭐ only</span>
+                        </label>
+                    </div>
+
+                    <div class="filter-option {% if min_rating == "4" %}selected{% endif %}">
+                        <label class="filter-option-main">
+                            <input type="radio"
+                                name="min_rating"
+                                value="4"
+                                {% if min_rating == "4" %}checked{% endif %}
+                                onchange="filterChanged()">
+                            <span>⭐⭐⭐⭐ & up</span>
+                        </label>
+                    </div>
+
+                    <div class="filter-option {% if not min_rating %}selected{% endif %}">
+                        <label class="filter-option-main">
+                            <input type="radio"
+                                name="min_rating"
+                                value=""
+                                {% if not min_rating %}checked{% endif %}
+                                onchange="filterChanged()">
+                            <span>All ratings</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button type="button" class="filter-btn primary" onclick="filterChanged()">Apply</button>
+                <button type="button" class="filter-btn" id="resetFilterBtn">Reset</button>
+            </div>
+        </form>
+    </aside>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="content-area">
+        {% if catalog_only %}
+        <div class="controls-bar">
+            <div class="results-info">
+                <span>Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_books }} books</span>
+                {% if q or selected_categories or min_price or max_price or min_rating %}
+                <a href="{% if catalog_only %}{% url 'book_catalog' %}{% else %}{% url 'book_list' %}{% endif %}" class="clear-filters-btn">
+                    <span>✕</span>
+                    <span>Clear filters</span>
+                </a>
+                {% endif %}
+            </div>
+            <select name="sort"
+                onchange="filterChanged()"
+                form="filterForm">
+
+                <option value="name" {% if sort_by == "name" %}selected{% endif %}>
+                    Sort by Name
+                </option>
+
+                <option value="price_low" {% if sort_by == "price_low" %}selected{% endif %}>
+                    Sort by Price: Low to High
+                </option>
+
+                <option value="price_high" {% if sort_by == "price_high" %}selected{% endif %}>
+                    Sort by Price: High to Low
+                </option>
+
+                <option value="rating" {% if sort_by == "rating" %}selected{% endif %}>
+                    Sort by Rating
+                </option>
+            </select>
+        </div>
+        {% else %}
+        <div class="home-results-info">
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_books }} books
+        </div>
+        {% endif %}
+
+        <div class="grid-container">
+            {% for book in books %}
+            <div class="card">
+                <a href="/{{ book.id }}/" style="display:block; text-decoration:none;">
+                    <div class="book-cover {% if book.cover_image %}has-image{% endif %}">
+                        {% if book.cover_image %}
+                        <img src="{{ book.cover_image }}" alt="{{ book.title }} cover">
+                        {% endif %}
+                    </div>
+                </a>
+
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <a href="/{{ book.id }}/">{{ book.title|truncatechars:40 }}</a>
+                    </h3>
+                    <p class="card-author">by {{ book.author }}</p>
+
+                    <div class="card-categories">
+                        {% if book.category_names %}
+                            {% for category_name in book.category_names|slice:":2" %}
+                            <span class="category-badge">{{ category_name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="category-badge">General</span>
+                        {% endif %}
+                    </div>
+
+                    <p class="card-desc">{{ book.description|default:"A curated title from our catalog with quality content and reader-friendly value."|truncatewords:18 }}</p>
+
+                    <div class="star-rating">
+                        <span>
+                            {% if book.rating >= 1 %}★{% else %}☆{% endif %}{% if book.rating >= 2 %}★{% else %}☆{% endif %}{% if book.rating >= 3 %}★{% else %}☆{% endif %}{% if book.rating >= 4 %}★{% else %}☆{% endif %}{% if book.rating >= 5 %}★{% else %}☆{% endif %}
+                        </span>
+                        <span>({{ book.review_count }})</span>
+                    </div>
+
+                    <div class="card-price">${{ book.price }}</div>
+
+                    {% if book.stock > 10 %}
+                    <span class="card-stock in-stock">In Stock</span>
+                    {% elif book.stock > 0 %}
+                    <span class="card-stock low-stock">Only {{ book.stock }} left</span>
+                    {% else %}
+                    <span class="card-stock out-of-stock">Out of Stock</span>
+                    {% endif %}
+
+                    <a href="/add/{{ book.id }}/" class="btn-add">
+                        Add Product to Cart
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <h3>No books found matching your search 😔</h3>
+                <p style="color: #64748b; margin: 16px 0;">Try adjusting your filters or search terms</p>
+                <a href="{% if catalog_only %}{% url 'book_catalog' %}{% else %}{% url 'book_list' %}{% endif %}">Clear All Filters</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% for cat in selected_categories %}&cat={{ cat }}{% endfor %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}#books">&larr;</a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <span class="current-page">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% for cat in selected_categories %}&cat={{ cat }}{% endfor %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}#books">{{ num }}</a>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% for cat in selected_categories %}&cat={{ cat }}{% endfor %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}#books">&rarr;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </main>
+</div>
+</div>{# end #book-results #}
+
+<style>
+#book-results {
+    transition: opacity 0.2s ease;
+}
+#book-results.searching {
+    opacity: 0.45;
+    pointer-events: none;
+}
+.search-spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+.search-spinner.active { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  const RESULTS_ID = 'book-results';
+  let debounceTimer = null;
+  let currentController = null;
+
+  // ── Fetch and swap only the #book-results block ──────────
+  async function doSearch(params, pushState) {
+    if (pushState === undefined) pushState = true;
+
+    const url = window.location.pathname + '?' + params.toString();
+    const container = document.getElementById(RESULTS_ID);
+    const spinner   = document.querySelector('.search-spinner');
+
+    if (currentController) currentController.abort();
+    currentController = new AbortController();
+
+    container.classList.add('searching');
+    if (spinner) spinner.classList.add('active');
+
+    try {
+      const res = await fetch(url, {
+        signal: currentController.signal,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!res.ok) throw new Error('bad response');
+
+      const html = await res.text();
+      const parsed = new DOMParser().parseFromString(html, 'text/html');
+      const newBlock = parsed.getElementById(RESULTS_ID);
+
+      if (newBlock) {
+        container.replaceWith(newBlock);
+      }
+
+      if (pushState) {
+        history.pushState({ params: params.toString() }, '', url);
+      }
+
+      // Scroll to the book grid, not the page top
+      const anchor = document.getElementById('books');
+      if (anchor) {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        // Graceful fallback: let the browser do a normal navigation
+        window.location.href = url;
+      }
+    } finally {
+      const c2 = document.getElementById(RESULTS_ID);
+      if (c2) c2.classList.remove('searching');
+      if (spinner) spinner.classList.remove('active');
+    }
+  }
+
+  // ── Hero search form ─────────────────────────────────────
+    // ── Hero search helpers ──────────────────────────────────
+    function getHeroQuery() {
+        var el = document.getElementById('heroSearchInput');
+        return el ? el.value.trim() : '';
+    }
+
+    function setHeroQuery(val) {
+        var el = document.getElementById('heroSearchInput');
+        if (el) el.value = val;
+    }
+
+    function setHint(msg, highlight) {
+        var el = document.getElementById('heroSearchHint');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.toggle('has-results', !!highlight);
+    }
+
+    function runHeroSearch(q) {
+        var base = "{% url 'book_catalog' %}";
+        var target = q ? (base + '?q=' + encodeURIComponent(q)) : base;
+        window.location.href = target;
+    }
+
+    // ── Hero search button ───────────────────────────────────
+    var heroBtn = document.getElementById('heroSearchBtn');
+    if (heroBtn) {
+        var spinEl = document.createElement('span');
+        spinEl.className = 'search-spinner';
+        heroBtn.appendChild(spinEl);
+
+        heroBtn.addEventListener('click', function () {
+            clearTimeout(debounceTimer);
+            runHeroSearch(getHeroQuery());
+        });
+    }
+
+    // ── Hero search input ────────────────────────────────────
+    var heroInput = document.getElementById('heroSearchInput');
+    if (heroInput) {
+        heroInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(debounceTimer);
+                runHeroSearch(getHeroQuery());
+            }
+        });
+        heroInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                var current = getHeroQuery();
+                setHint(current ? 'Press Enter to open Books for "' + current + '"' : 'Type a title and press Enter to open Books page', !!current);
+            }, 200);
+        });
+    }
+
+    // ── Quick-tag clicks (preserve native link navigation) ───
+    document.querySelectorAll('.quick-tag[data-q]').forEach(function (tag) {
+        tag.addEventListener('click', function (e) {
+            var q = tag.dataset.q;
+            setHeroQuery(q);
+            clearTimeout(debounceTimer);
+            // Keep native anchor behavior so this always navigates
+            // to the Books page even if other JS code fails.
+        });
+    });
+
+    // Update hint after every doSearch resolves ───────────────
+    var _origDoSearch = doSearch;
+    doSearch = async function(params, pushState) {
+        await _origDoSearch(params, pushState);
+        var q = params.get('q') || '';
+        var info = document.querySelector('.home-results-info, .results-info span');
+        if (info) {
+            setHint(q ? 'Results for \u201c' + q + '\u201d' : 'Showing all books', true);
+        } else {
+            setHint(q ? 'No results for \u201c' + q + '\u201d' : '', false);
+        }
+    };
+
+    // ── Sidebar filter form (catalog page only) ───────────────
+    window.filterChanged = function () {
+        var form = document.getElementById('filterForm');
+        if (!form) return;
+        var params = new URLSearchParams(new FormData(form));
+        var q = getHeroQuery();
+        if (q) params.set('q', q);
+        doSearch(params);
+    };
+
+    // Debounced price typing for smoother filtering
+    document.addEventListener('input', function (event) {
+        if (!event.target.matches('#filterForm .filter-price-input')) return;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            window.filterChanged();
+        }, 350);
+    });
+
+    // Price preset buttons and reset control (event delegation survives AJAX swaps)
+    document.addEventListener('click', function (event) {
+        var preset = event.target.closest('.price-preset-btn');
+        if (preset) {
+            event.preventDefault();
+            var form = document.getElementById('filterForm');
+            if (!form) return;
+            var minInput = form.querySelector('input[name="min_price"]');
+            var maxInput = form.querySelector('input[name="max_price"]');
+            if (minInput) minInput.value = preset.dataset.min || '';
+            if (maxInput) maxInput.value = preset.dataset.max || '';
+            window.filterChanged();
+            return;
+        }
+
+        if (event.target && event.target.id === 'resetFilterBtn') {
+            event.preventDefault();
+            var resetForm = document.getElementById('filterForm');
+            if (!resetForm) return;
+
+            resetForm.querySelectorAll('input[name="cat"]').forEach(function (input) {
+                input.checked = false;
+            });
+
+            var minPrice = resetForm.querySelector('input[name="min_price"]');
+            var maxPrice = resetForm.querySelector('input[name="max_price"]');
+            if (minPrice) minPrice.value = '';
+            if (maxPrice) maxPrice.value = '';
+
+            var allRatings = resetForm.querySelector('input[name="min_rating"][value=""]');
+            if (allRatings) allRatings.checked = true;
+
+            window.filterChanged();
+        }
+
+        var expandBtn = event.target.closest('#expandAllFiltersBtn');
+        if (expandBtn) {
+            event.preventDefault();
+            document.querySelectorAll('#filterForm .filter-section').forEach(function (section) {
+                section.classList.remove('collapsed');
+            });
+            return;
+        }
+
+        var collapseBtn = event.target.closest('#collapseAllFiltersBtn');
+        if (collapseBtn) {
+            event.preventDefault();
+            document.querySelectorAll('#filterForm .filter-section').forEach(function (section) {
+                section.classList.add('collapsed');
+            });
+            return;
+        }
+
+        var toggle = event.target.closest('[data-section-toggle]');
+        if (toggle) {
+            event.preventDefault();
+            var section = toggle.closest('.filter-section');
+            if (section) section.classList.toggle('collapsed');
+        }
+    });
+
+  // ── Browser back / forward ────────────────────────────────
+  window.addEventListener('popstate', function (e) {
+    const p = (e.state && e.state.params) ? e.state.params : window.location.search.replace(/^\?/, '');
+    doSearch(new URLSearchParams(p), false);
+  });
+
+}());
+</script>
+
+{% endblock %}

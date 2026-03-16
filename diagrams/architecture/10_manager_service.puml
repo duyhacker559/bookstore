@@ -1,0 +1,52 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 10. Manager Service Architecture
+' Render: plantuml 10_manager_service.puml  →  10_manager_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 10. Manager Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+
+package "manager-service  :8003" {
+  component "URL Router\nurls.py" as router
+
+  package "managers app" {
+    component "ManagerListCreateView\nGET  /managers/\nPOST /managers/" as view
+    component "ManagerSerializer\n- name  (required)\n- email (unique)" as serial
+    component "Manager Model\n──────────────\nid   : AutoField\nname : CharField\nemail: EmailField (unique)" as model
+  }
+}
+
+database "manager-db\n(SQLite / PostgreSQL)" as db
+
+gw     --> router : HTTP GET/POST /managers/
+router --> view
+view   --> serial : validate payload
+serial --> model  : save()
+model  --> db     : INSERT / SELECT manager
+
+view   --> gw : 200 OK / 201 Created
+
+note bottom of model
+  Manager identity is separate from
+  staff-service and customer-service —
+  each context owns its own data.
+  Higher-privilege operations (approve
+  orders, manage staff) will be gated
+  by JWT role claims in Iteration 1.
+end note
+
+@enduml

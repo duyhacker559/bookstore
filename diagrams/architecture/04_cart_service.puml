@@ -1,0 +1,73 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 04. Cart Service Architecture
+' Render: plantuml 04_cart_service.puml  →  04_cart_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 04. Cart Service Architecture
+top to bottom direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway"       as gw
+actor "customer-service"  as cs_caller
+
+package "cart-service  :8006" {
+  component "URL Router\nurls.py" as router
+
+  package "carts app" {
+    component "CartListCreateView\nGET  /carts/\nPOST /carts/" as cart_view
+    component "CartDetailView\nGET /carts/{id}/" as cart_detail
+    component "CartItemCreateView\nPOST /cart-items/" as item_view
+
+    component "Cart Model\n──────────────\nid         : AutoField\ncustomer_id: IntegerField" as cart_model
+    component "CartItem Model\n──────────────\nid      : AutoField\ncart    : ForeignKey(Cart)\nbook_id : IntegerField\nquantity: IntegerField" as item_model
+  }
+
+  component "Book Validation\nrequests.get(\n  book-service/books/\n)" as book_check
+}
+
+database "cart-db\n(SQLite / PostgreSQL)" as db
+
+package "book-service  :8005" {
+  component "GET /books/" as book_ep
+}
+
+' ── Flows ─────────────────────────────────────────────────────────────────────
+cs_caller --> router  : POST /carts/ {customer_id}
+gw        --> router  : GET/POST /carts/
+gw        --> router  : GET /carts/{id}/
+gw        --> router  : POST /cart-items/
+
+router --> cart_view
+router --> cart_detail
+router --> item_view
+
+cart_view   --> cart_model  : save()
+cart_model  --> db          : INSERT cart
+cart_detail --> cart_model  : query cart + items
+cart_detail --> item_model  : SELECT items WHERE cart_id
+
+item_view   --> book_check  : validate book_id
+book_check  --> book_ep     : GET /books/
+book_ep     --> book_check  : 200 [books list]
+book_check  --> item_view   : valid / 404 not found
+item_view   --> item_model  : save() if valid
+item_model  --> db          : INSERT cart_item
+
+note right of book_check
+  Returns HTTP 404 to caller
+  if book_id is not found in
+  book-service response.
+end note
+
+@enduml

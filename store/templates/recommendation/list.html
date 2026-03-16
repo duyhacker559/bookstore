@@ -1,0 +1,1085 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendations - BookStore{% endblock %}
+
+{% block content %}
+
+<style>
+/* ============================================
+   RECOMMENDATIONS PAGE STYLES
+   ============================================ */
+
+.recommendations-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.recommendations-container.ajax-loading {
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+/* Hero Section */
+.recommendations-hero {
+    background: linear-gradient(135deg, #eaf2ff 0%, #dbe8ff 55%, #eef2ff 100%);
+    border-radius: 20px;
+    padding: 52px 40px;
+    margin-bottom: 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+.recommendations-hero::before {
+    content: '✨';
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    font-size: 4rem;
+    opacity: 0.3;
+    animation: float 3s ease-in-out infinite;
+}
+
+.recommendations-hero::after {
+    content: '🌟';
+    position: absolute;
+    bottom: 20px;
+    right: 40px;
+    font-size: 3rem;
+    opacity: 0.3;
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1d4ed8;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.hero-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 16px;
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1d4ed8;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+/* Filter Tabs */
+.filter-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+.filter-tabs::-webkit-scrollbar {
+    height: 6px;
+}
+
+.filter-tabs::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.filter-tabs::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.filter-tab {
+    padding: 12px 24px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 25px;
+    color: #475569;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    border: 2px solid #e2e8f0;
+}
+
+.filter-tab:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.filter-tab.active {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+    border-color: #1d4ed8;
+    color: white;
+    box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+}
+
+.advanced-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    border: 1px solid #e2e8f0;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-apply-btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-apply-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(30, 58, 138, 0.25);
+}
+
+.filter-apply-btn.loading {
+    opacity: 0.8;
+    cursor: wait;
+}
+
+.filter-clear-link {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    text-decoration: none;
+    font-weight: 600;
+    background: #fff;
+}
+
+.active-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+    min-height: 28px;
+}
+
+.active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.active-filter-chip button {
+    border: none;
+    background: transparent;
+    color: #3730a3;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+/* Section Header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-subtitle {
+    margin-top: -10px;
+    margin-bottom: 20px;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 8px;
+    background: white;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.view-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+}
+
+.view-btn.active {
+    background: #2563eb;
+    color: white;
+}
+
+/* Grid Container - Enhanced */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+}
+
+.grid-container.list-view {
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.grid-container.list-view .card {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 220px;
+}
+
+.grid-container.list-view .book-cover {
+    width: 180px;
+    height: auto;
+    min-height: 220px;
+    flex-shrink: 0;
+}
+
+.grid-container.list-view .card-body {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* Book Card - Enhanced */
+.card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    border-color: #2563eb;
+}
+
+/* Recommendation Badge */
+.rec-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.book-cover {
+    width: 100%;
+    height: 320px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+}
+
+.book-cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 100%);
+}
+
+.book-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: relative;
+    z-index: 1;
+}
+
+.book-cover .emoji {
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    animation: rotate 4s ease-in-out infinite;
+}
+
+@keyframes rotate {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(10deg); }
+}
+
+.card:hover .book-cover .emoji {
+    transform: scale(1.2);
+}
+
+.card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+    min-height: 2.8em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-title a {
+    text-decoration: none;
+    color: #1e293b;
+    transition: color 0.2s ease;
+}
+
+.card-title a:hover {
+    color: #2563eb;
+}
+
+.card-author {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+/* Rating */
+.card-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.stars {
+    color: #f59e0b;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+}
+
+.rating-count {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+/* Match Score */
+.match-score {
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+}
+
+.match-percentage {
+    font-weight: 700;
+    color: #15803d;
+}
+
+/* Card Footer */
+.card-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #2563eb;
+}
+
+.btn-add {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+.btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+/* Wishlist Button */
+.btn-wishlist {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-wishlist:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    transform: scale(1.1);
+}
+
+.btn-wishlist.active {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #cbd5e1;
+}
+
+.empty-state-icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: #475569;
+    margin-bottom: 16px;
+    font-size: 1.5rem;
+}
+
+.empty-state p {
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+/* Why Recommended Section */
+.why-recommended {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    margin-top: 60px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.why-recommended h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.reasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.reason-card {
+    text-align: center;
+    padding: 30px 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.reason-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.reason-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.reason-desc {
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .recommendations-hero {
+        padding: 40px 24px;
+    }
+    
+    .hero-stats {
+        gap: 24px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .filter-tabs {
+        margin-left: -20px;
+        margin-right: -20px;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .grid-container.list-view .card {
+        flex-direction: column;
+    }
+
+    .grid-container.list-view .book-cover {
+        width: 100%;
+        min-height: 260px;
+    }
+}
+</style>
+
+<div class="recommendations-container" id="recommendations-root">
+    <!-- Hero Section -->
+    <div class="recommendations-hero">
+        <div class="hero-content">
+            <span class="hero-badge">✨ Personalized Just for You</span>
+            <h1 class="hero-title">Smart Book Recommendations</h1>
+            <p class="hero-subtitle">
+                Ranked by your best match first, then refined by rating and reader popularity.
+            </p>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_recommendations|default:books|length }}</span>
+                    <span class="stat-label">Recommendations</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ top_match_score|default:0 }}%</span>
+                    <span class="stat-label">Top Match</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">4.8★</span>
+                    <span class="stat-label">Avg Rating</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+        <form method="get" action="" id="recommendationFilterForm" style="margin-bottom:10px;">
+            <input type="hidden" name="filter" value="{{ filter_type|default:'all' }}" id="activeFilterType">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+                <button type="button" data-filter="all" class="filter-tab {% if filter_type == 'all' or not filter_type %}active{% endif %}">
+          <span>⭐</span>
+          <span>All Recommendations</span>
+        </button>
+                <button type="button" data-filter="trending" class="filter-tab {% if filter_type == 'trending' %}active{% endif %}">
+          <span>🔥</span>
+          <span>Trending</span>
+        </button>
+                <button type="button" data-filter="new" class="filter-tab {% if filter_type == 'new' %}active{% endif %}">
+          <span>🆕</span>
+          <span>New Arrivals</span>
+        </button>
+                <button type="button" data-filter="rated" class="filter-tab {% if filter_type == 'rated' %}active{% endif %}">
+          <span>⭐⭐⭐</span>
+          <span>Highest Rated</span>
+        </button>
+                <button type="button" data-filter="deals" class="filter-tab {% if filter_type == 'deals' %}active{% endif %}">
+          <span>💰</span>
+          <span>Best Deals</span>
+        </button>
+      </div>
+      
+      <!-- Advanced Filters -->
+            <div class="advanced-filters">
+        <div>
+          <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Search</label>
+          <input type="text" name="q" value="{{ query }}" placeholder="Title or author…" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Min Price ($)</label>
+          <input type="number" name="price_min" value="{{ price_min }}" placeholder="0" min="0" step="0.01" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Max Price ($)</label>
+          <input type="number" name="price_max" value="{{ price_max }}" placeholder="{{ max_price }}" min="0" step="0.01" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Category</label>
+          <select name="category" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;background:#fff;cursor:pointer;outline:none;">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+              <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Min Rating</label>
+          <select name="rating_min" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;background:#fff;cursor:pointer;outline:none;">
+            <option value="">All Ratings</option>
+            <option value="3.5" {% if rating_min == '3.5' %}selected{% endif %}>3.5+ ⭐</option>
+            <option value="4.0" {% if rating_min == '4.0' %}selected{% endif %}>4.0+ ⭐⭐</option>
+            <option value="4.5" {% if rating_min == '4.5' %}selected{% endif %}>4.5+ ⭐⭐⭐</option>
+          </select>
+        </div>
+                <div class="filter-actions">
+                    <button type="submit" id="filterApplyBtn" class="filter-apply-btn">Apply Filters</button>
+          {% if query or price_min or price_max or category or rating_min or filter_type != 'all' %}
+                        <a href="{% url 'recommendations' %}" class="filter-clear-link" id="filterClearLink">Clear</a>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+
+        <div id="activeFilters" class="active-filters"></div>
+
+    <!-- Section Header -->
+    <div class="section-header">
+        <h2 class="section-title">
+            <span>📚</span>
+            <span>Your Personalized Picks</span>
+        </h2>
+        <div class="view-toggle">
+            <button class="view-btn active" data-view="grid" title="Grid View" type="button">⊞</button>
+            <button class="view-btn" data-view="list" title="List View" type="button">☰</button>
+        </div>
+    </div>
+    <p class="section-subtitle">Ranked by your match first, then by rating and reader popularity.</p>
+
+    <!-- Books Grid -->
+    <div class="grid-container">
+        {% for book in books %}
+        <div class="card">
+            <!-- Recommendation Badge -->
+            <div class="rec-badge">
+                <span>⭐</span>
+                <span>Top Pick</span>
+            </div>
+
+            <a href="/{{ book.id }}/" style="display:block; text-decoration:none;">
+                <div class="book-cover">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image }}" alt="{{ book.title }} cover">
+                    {% else %}
+                    <span class="emoji">📘</span>
+                    {% endif %}
+                </div>
+            </a>
+
+            <div class="card-body">
+                <h3 class="card-title">
+                    <a href="/{{ book.id }}/">{{ book.title }}</a>
+                </h3>
+                <p class="card-author">by {{ book.author }}</p>
+
+                <!-- Rating -->
+                <div class="card-rating">
+                    <span class="stars">
+                        {% if book.rating >= 1 %}★{% else %}☆{% endif %}{% if book.rating >= 2 %}★{% else %}☆{% endif %}{% if book.rating >= 3 %}★{% else %}☆{% endif %}{% if book.rating >= 4 %}★{% else %}☆{% endif %}{% if book.rating >= 5 %}★{% else %}☆{% endif %}
+                    </span>
+                    <span class="rating-count">({{ book.review_count|default:"0" }})</span>
+                </div>
+
+                <!-- Match Score -->
+                <div class="match-score">
+                    <span>✓</span>
+                    <span class="match-percentage">{{ book.match_score|default:"95" }}% Match</span>
+                </div>
+                
+                <!-- Match Reason -->
+                {% if book.match_reason %}
+                <div style="padding:8px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;margin-bottom:16px;font-size:.8rem;color:#15803d;font-weight:500;">
+                    {{ book.match_reason }}
+                </div>
+                {% endif %}
+
+                <!-- Footer -->
+                <div class="card-footer">
+                    <span class="card-price">${{ book.price }}</span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-wishlist" title="Add to Wishlist" onclick="toggleWishlist(this)">
+                            🤍
+                        </button>
+                        <a href="/add/{{ book.id }}/" class="btn-add">
+                            <span>Add</span>
+                            <span>+</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <h3>No Recommendations Yet</h3>
+            <p>Start browsing our collection to get personalized recommendations!</p>
+            <a href="/" class="btn btn-primary" style="display: inline-block; margin-top: 16px;">
+                Browse Books
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if world_pick_books %}
+    <div class="section-header" style="margin-top:8px;">
+        <h2 class="section-title">
+            <span>🌍</span>
+            <span>World Picks</span>
+        </h2>
+    </div>
+    <p class="section-subtitle">Based on global purchase behavior across all customers.</p>
+
+    <div class="grid-container">
+        {% for book in world_pick_books %}
+        <div class="card">
+            <div class="rec-badge"><span>⭐</span><span>Top Pick</span></div>
+            <a href="/{{ book.id }}/" style="display:block; text-decoration:none;">
+                <div class="book-cover">
+                    {% if book.cover_image %}<img src="{{ book.cover_image }}" alt="{{ book.title }} cover">{% else %}<span class="emoji">📘</span>{% endif %}
+                </div>
+            </a>
+            <div class="card-body">
+                <h3 class="card-title"><a href="/{{ book.id }}/">{{ book.title }}</a></h3>
+                <p class="card-author">by {{ book.author }}</p>
+                <div class="card-rating"><span class="stars">{% if book.rating >= 1 %}★{% else %}☆{% endif %}{% if book.rating >= 2 %}★{% else %}☆{% endif %}{% if book.rating >= 3 %}★{% else %}☆{% endif %}{% if book.rating >= 4 %}★{% else %}☆{% endif %}{% if book.rating >= 5 %}★{% else %}☆{% endif %}</span><span class="rating-count">({{ book.review_count|default:"0" }})</span></div>
+                <div class="match-score"><span>✓</span><span class="match-percentage">{{ book.match_score|default:"95" }}% Match</span></div>
+                {% if book.match_reason %}<div style="padding:8px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;margin-bottom:16px;font-size:.8rem;color:#15803d;font-weight:500;">{{ book.match_reason }}</div>{% endif %}
+                <div class="card-footer"><span class="card-price">${{ book.price }}</span><div style="display: flex; gap: 8px;"><button class="btn-wishlist" title="Add to Wishlist" onclick="toggleWishlist(this)">🤍</button><a href="/add/{{ book.id }}/" class="btn-add"><span>Add</span><span>+</span></a></div></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Why Recommended Section -->
+    <div class="why-recommended">
+        <h2>Why These Books?</h2>
+        <div class="reasons-grid">
+            <div class="reason-card">
+                <span class="reason-icon">🔥</span>
+                <h3 class="reason-title">Trending Now</h3>
+                <p class="reason-desc">Popular picks that other readers are loving right now</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">⭐</span>
+                <h3 class="reason-title">Highly Rated</h3>
+                <p class="reason-desc">Books with excellent reviews from our community</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">🎯</span>
+                <h3 class="reason-title">Curated Selection</h3>
+                <p class="reason-desc">Hand-picked by our expert team for quality</p>
+            </div>
+            <div class="reason-card">
+                <span class="reason-icon">✨</span>
+                <h3 class="reason-title">For You</h3>
+                <p class="reason-desc">Tailored to match your reading preferences</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Wishlist Toggle
+function toggleWishlist(button) {
+    button.classList.toggle('active');
+    button.textContent = button.classList.contains('active') ? '❤️' : '🤍';
+}
+
+const RECOMMENDATIONS_ROOT_ID = 'recommendations-root';
+const VIEW_STORAGE_KEY = 'recommendationViewMode';
+let recommendationFetchController = null;
+
+function applySavedViewMode() {
+    const grids = document.querySelectorAll('.grid-container');
+    const viewButtons = document.querySelectorAll('.view-btn[data-view]');
+    if (!grids.length || !viewButtons.length) return;
+
+    const view = localStorage.getItem(VIEW_STORAGE_KEY) || 'grid';
+    grids.forEach(function (grid) {
+        grid.classList.toggle('list-view', view === 'list');
+    });
+    viewButtons.forEach(function (button) {
+        button.classList.toggle('active', button.dataset.view === view);
+    });
+}
+
+async function fetchRecommendationResults(params, pushState) {
+    const root = document.getElementById(RECOMMENDATIONS_ROOT_ID);
+    if (!root) return;
+
+    const query = params.toString();
+    const url = window.location.pathname + (query ? '?' + query : '');
+
+    if (recommendationFetchController) recommendationFetchController.abort();
+    recommendationFetchController = new AbortController();
+
+    root.classList.add('ajax-loading');
+
+    try {
+        const response = await fetch(url, {
+            signal: recommendationFetchController.signal,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) throw new Error('Request failed');
+
+        const html = await response.text();
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+        const nextRoot = parsed.getElementById(RECOMMENDATIONS_ROOT_ID);
+        if (!nextRoot) throw new Error('Recommendation container missing');
+
+        root.replaceWith(nextRoot);
+
+        if (pushState !== false) {
+            history.pushState({ recommendationParams: query }, '', url);
+        }
+
+        initializeRecommendationInteractions();
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            window.location.href = url;
+        }
+    }
+}
+
+function buildParamsFromForm(form) {
+    const params = new URLSearchParams(new FormData(form));
+    if (!params.get('filter')) params.set('filter', 'all');
+    return params;
+}
+
+function renderActiveFilterChips() {
+    const chipHost = document.getElementById('activeFilters');
+    if (!chipHost) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const labels = {
+        q: 'Search',
+        price_min: 'Min $',
+        price_max: 'Max $',
+        category: 'Category',
+        rating_min: 'Rating',
+        filter: 'Mode'
+    };
+    const removableKeys = ['q', 'price_min', 'price_max', 'category', 'rating_min', 'filter'];
+    const chips = [];
+
+    removableKeys.forEach(function (key) {
+        const value = params.get(key);
+        if (!value || (key === 'filter' && value === 'all')) return;
+        chips.push({ key: key, value: value });
+    });
+
+    if (!chips.length) {
+        chipHost.innerHTML = '';
+        return;
+    }
+
+    chipHost.innerHTML = chips.map(function (chip) {
+        return '<span class="active-filter-chip">'
+            + (labels[chip.key] || chip.key)
+            + ': '
+            + chip.value
+            + '<button type="button" data-remove="'
+            + chip.key
+            + '" aria-label="Remove filter">×</button></span>';
+    }).join('');
+
+    chipHost.querySelectorAll('button[data-remove]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const next = new URLSearchParams(window.location.search);
+            next.delete(button.dataset.remove);
+            if (!next.get('filter')) next.set('filter', 'all');
+            fetchRecommendationResults(next, true);
+        });
+    });
+}
+
+function initializeRecommendationInteractions() {
+    applySavedViewMode();
+    renderActiveFilterChips();
+
+    const form = document.getElementById('recommendationFilterForm');
+    if (form) {
+        const applyBtn = document.getElementById('filterApplyBtn');
+        const hiddenFilterInput = document.getElementById('activeFilterType');
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (applyBtn) {
+                applyBtn.classList.add('loading');
+                applyBtn.textContent = 'Applying...';
+            }
+            fetchRecommendationResults(buildParamsFromForm(form), true);
+        });
+
+        form.querySelectorAll('button[data-filter]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                if (hiddenFilterInput) hiddenFilterInput.value = button.dataset.filter;
+                if (applyBtn) {
+                    applyBtn.classList.add('loading');
+                    applyBtn.textContent = 'Applying...';
+                }
+                fetchRecommendationResults(buildParamsFromForm(form), true);
+            });
+        });
+
+        form.querySelectorAll('select[name="category"], select[name="rating_min"]').forEach(function (el) {
+            el.addEventListener('change', function () {
+                fetchRecommendationResults(buildParamsFromForm(form), true);
+            });
+        });
+    }
+
+    const clearLink = document.getElementById('filterClearLink');
+    if (clearLink) {
+        clearLink.addEventListener('click', function (event) {
+            event.preventDefault();
+            fetchRecommendationResults(new URLSearchParams('filter=all'), true);
+        });
+    }
+
+    document.querySelectorAll('.view-btn[data-view]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const view = button.dataset.view;
+            localStorage.setItem(VIEW_STORAGE_KEY, view);
+            applySavedViewMode();
+        });
+    });
+}
+
+initializeRecommendationInteractions();
+
+window.addEventListener('popstate', function (event) {
+    const current = (event.state && event.state.recommendationParams !== undefined)
+        ? event.state.recommendationParams
+        : window.location.search.replace(/^\?/, '');
+    fetchRecommendationResults(new URLSearchParams(current), false);
+});
+</script>
+
+{% endblock %}

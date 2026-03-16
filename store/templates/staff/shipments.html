@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Shipment Management - Staff{% endblock %}
+{% block content %}
+<style>
+:root{--sb-w:240px;--blue:#2563eb;--blue-dark:#1e40af;--sidebar-bg:#0f172a;--sidebar-text:#94a3b8;}
+*{box-sizing:border-box;}
+.staff-wrap{display:flex;align-items:flex-start;gap:24px;max-width:1400px;margin:0 auto;padding:24px 20px 40px;}
+.staff-sidebar{width:var(--sb-w);flex:0 0 var(--sb-w);background:var(--sidebar-bg);display:flex;flex-direction:column;padding:16px 14px;border-radius:18px;position:sticky;top:130px;box-shadow:0 20px 45px rgba(15,23,42,.18);border:1px solid rgba(255,255,255,.06);}
+.staff-sidebar .brand{padding:8px 12px 16px;font-size:1.05rem;font-weight:700;color:#fff;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;}
+.staff-sidebar nav{padding:12px 0 0;display:grid;gap:4px;}
+.staff-sidebar nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;color:var(--sidebar-text);text-decoration:none;font-size:.93rem;font-weight:500;border-radius:12px;transition:all .18s;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.staff-sidebar nav a:hover{color:#fff;background:rgba(255,255,255,.05);}
+.staff-sidebar nav a.active{color:#fff;background:rgba(37,99,235,.18);box-shadow:inset 0 0 0 1px rgba(59,130,246,.15);}
+.staff-sidebar nav .nav-section{padding:14px 12px 4px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;}
+.staff-main{flex:1;min-width:0;}
+.page-header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;}
+.page-title{margin:0;color:#0f172a;font-size:1.7rem;font-weight:700;}
+.page-sub{margin:4px 0 0;color:#64748b;}
+.back-link{text-decoration:none;color:#2563eb;font-weight:600;}
+.alert-stack{display:grid;gap:8px;margin-bottom:16px;}
+.alert-item{background:#f8fafc;border:1px solid #e2e8f0;color:#334155;border-radius:10px;padding:12px 14px;}
+.filter-card,.table-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.04);}
+.filter-card{padding:16px;margin-bottom:18px;}
+.filter-grid{display:grid;grid-template-columns:1.6fr 1fr auto;gap:10px;}
+.filter-input,.filter-select{height:42px;border:1px solid #cbd5e1;border-radius:10px;padding:0 12px;font-size:.95rem;width:100%;}
+.filter-btn{height:42px;border:none;background:#2563eb;color:#fff;border-radius:10px;padding:0 16px;font-weight:600;cursor:pointer;}
+.table-card{overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead{background:#f8fafc;color:#475569;text-align:left;font-size:.9rem;}
+th{padding:12px;}
+td{padding:12px;border-top:1px solid #e2e8f0;color:#334155;vertical-align:middle;}
+tr:hover td{background:#f8fafc;}
+.status-value{font-weight:600;color:#0f172a;}
+.status-form{display:flex;gap:8px;min-width:240px;flex-wrap:wrap;}
+.status-select{height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:0 8px;flex:1;}
+.save-btn{height:38px;border:none;background:#1e40af;color:#fff;border-radius:8px;padding:0 12px;font-weight:600;cursor:pointer;}
+.empty-note{margin:0;padding:18px;color:#64748b;}
+@media(max-width:900px){.staff-wrap{flex-direction:column;padding:16px;}.staff-sidebar{width:100%;flex:1 1 auto;position:static;padding:10px 12px;}.staff-sidebar nav{display:flex;overflow-x:auto;padding:8px 0 0;}.staff-sidebar nav a{white-space:nowrap;padding:10px 14px;}.staff-sidebar .brand{padding:8px 6px 12px;}.staff-sidebar nav .nav-section{display:none;}.filter-grid{grid-template-columns:1fr;}.status-form{min-width:0;}.save-btn{width:100%;}}
+</style>
+
+<div class="staff-wrap">
+  <aside class="staff-sidebar">
+    <div class="brand">🏪 Staff Panel</div>
+    <nav>
+      <a href="{% url 'staff_home' %}">🏠 Dashboard</a>
+      <div class="nav-section">Catalogue</div>
+      <a href="{% url 'staff_books' %}">📚 Books</a>
+      <div class="nav-section">Orders</div>
+      <a href="{% url 'staff_manage_shipments' %}" class="active">🚚 Shipments</a>
+      <div class="nav-section">Community</div>
+      <a href="{% url 'staff_feedback_moderation' %}">🛡 Moderation</a>
+      <a href="{% url 'staff_inbox' %}">📥 Inbox{% if staff_inbox_unread_count > 0 %} ({{ staff_inbox_unread_count }}){% endif %}</a>
+      <div class="nav-section">Insights</div>
+      <a href="{% url 'staff_analytics' %}">📊 Analytics</a>
+    </nav>
+  </aside>
+
+  <main class="staff-main">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Shipment Management</h1>
+        <p class="page-sub">Update shipment status and sync with Shipping Service.</p>
+      </div>
+      <a href="{% url 'staff_home' %}" class="back-link">Back to Dashboard</a>
+    </div>
+
+    {% if messages %}
+      <div class="alert-stack">
+        {% for message in messages %}
+          <div class="alert-item">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="filter-card">
+      <form method="get" class="filter-grid">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search by shipment, order, or customer" class="filter-input">
+        <select name="status" class="filter-select">
+          <option value="">All statuses</option>
+          {% for value, label in status_choices.items %}
+            <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="filter-btn">Filter</button>
+      </form>
+    </div>
+
+    <div class="table-card">
+      {% if shipments %}
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Shipment</th>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Method</th>
+                <th>Fee</th>
+                <th>Status</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for shipment in shipments %}
+                <tr>
+                  <td>#{{ shipment.id }}</td>
+                  <td>#{{ shipment.order.id }}</td>
+                  <td>{{ shipment.order.customer.name|default:shipment.order.customer.user.username }}</td>
+                  <td>{{ shipment.method_name }}</td>
+                  <td>${{ shipment.fee|floatformat:2 }}</td>
+                  <td class="status-value">{{ shipment.status }}</td>
+                  <td>
+                    <form method="post" action="{% url 'staff_update_shipment_status' shipment.id %}" class="status-form">
+                      {% csrf_token %}
+                      <select name="status" required class="status-select">
+                        {% for value, label in status_choices.items %}
+                          <option value="{{ value }}" {% if shipment.status|lower == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="save-btn">Save</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-note">No shipments found for the current filter.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+{% endblock %}

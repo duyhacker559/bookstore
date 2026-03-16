@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Rate & Review "{{ book.title }}" - BookStore{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 20px;">
+    <div style="max-width: 700px; margin: 0 auto;">
+        <h1 style="margin-bottom: 10px; color: #0f172a;">Rate & Review</h1>
+        <p style="color: #64748b; margin-bottom: 30px;">{{ book.title }} by {{ book.author }}</p>
+
+        <div style="background: white; padding: 30px; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
+            {% if not has_purchased %}
+            <div style="background: #fff7dd; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 10px; margin-bottom: 25px; border:1px solid #fde68a;">
+                <p style="color: #92400e; margin: 0;">ℹ️ <strong>Note:</strong> You haven't purchased this book. Your review won't be marked as "Verified Purchase".</p>
+            </div>
+            {% else %}
+            <div style="background: #ecfdf3; border-left: 4px solid #10b981; padding: 15px; border-radius: 10px; margin-bottom: 25px; border:1px solid #bbf7d0;">
+                <p style="color: #166534; margin: 0;">✓ <strong>Verified Purchase:</strong> Your review will be marked as a verified purchase.</p>
+            </div>
+            {% endif %}
+
+            <form method="POST" style="display: grid; gap: 20px;">
+                {% csrf_token %}
+
+                <!-- Star Rating -->
+                <div>
+                    <label style="display: block; margin-bottom: 12px; color: #1e293b; font-weight: 600;">Rating</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        {% for i in "12345" %}
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="score" value="{{ i }}" {% if existing_rating.score|add:0 == i|add:0 %}checked{% elif not existing_rating and i == "5" %}checked{% endif %} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                            <span style="font-size: 1.5rem; margin-right: 4px;">
+                                {% for j in "12345" %}
+                                    {% if j|add:0 <= i|add:0 %}⭐{% else %}☆{% endif %}
+                                {% endfor %}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Review Title -->
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Review Title</label>
+                    <input type="text" name="title" placeholder="e.g., Amazing book, highly recommended!" value="{{ existing_comment.title }}" maxlength="200" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <!-- Review Content -->
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Your Review</label>
+                    <textarea name="content" placeholder="Share your thoughts about this book..." maxlength="2000" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem; min-height: 150px; resize: vertical;">{{ existing_comment.content }}</textarea>
+                    <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">Max 2000 characters</p>
+                </div>
+
+                <!-- Buttons -->
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer;">
+                        Add Review
+                    </button>
+                    <a href="{% url 'book_detail' book.id %}" style="flex: 1; padding: 12px 24px; background: #334155; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; text-align: center; text-decoration: none;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

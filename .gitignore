@@ -1,0 +1,46 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Django / local databases
+*.sqlite3
+db.sqlite3
+
+# Runtime user-uploaded/generated content
+media/
+staticfiles/
+
+# Environment and secrets
+.env
+**/.env
+!.env.example
+
+# Logs and test artifacts
+*.log
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Temporary / lock files
+*.tmp
+*.swp
+*~
+~$*
+
+# Generated reports/artifacts (local outputs)
+Assignment05_B22DCVT527_PhamManhThang*.docx
+TECHNICAL_REPORT_BOOKSTORE_MICROSERVICES.docx
+TECHNICAL_REPORT_BOOKSTORE_MICROSERVICES.pdf

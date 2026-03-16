@@ -1,0 +1,840 @@
+{% extends "base.html" %}
+
+{% block title %}My Account - BookStore{% endblock %}
+
+{% block content %}
+
+<style>
+/* ============================================
+   CUSTOMER PROFILE/DASHBOARD STYLES
+   ============================================ */
+
+:root {
+    --theme-navy: #0f172a;
+    --theme-blue: #1d4ed8;
+    --theme-blue-dark: #1e3a8a;
+    --theme-surface: #ffffff;
+    --theme-border: #dbe2f0;
+    --theme-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.profile-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 34px 20px 44px;
+}
+
+/* Profile Header */
+.profile-header {
+    background: linear-gradient(135deg, var(--theme-blue) 0%, var(--theme-blue-dark) 58%, var(--theme-navy) 100%);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 40px;
+    color: white;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-header::before {
+    content: '👤';
+    position: absolute;
+    top: -20px;
+    right: 40px;
+    font-size: 12rem;
+    opacity: 0.1;
+}
+
+.profile-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-info h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.profile-info .member-since {
+    font-size: 1rem;
+    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Dashboard Layout */
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+}
+
+/* Sidebar */
+.dashboard-sidebar {
+    background: linear-gradient(180deg, #172554 0%, #0f172a 100%);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    height: fit-content;
+    position: sticky;
+    top: 90px;
+}
+
+.nav-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #dbeafe;
+    text-decoration: none;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    transform: translateX(4px);
+}
+
+.nav-item.active {
+    background: rgba(37, 99, 235, 0.3);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.22);
+    font-weight: 600;
+}
+
+.nav-item .icon {
+    font-size: 1.2rem;
+}
+
+.logout-btn {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* Main Content */
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.action-card {
+    background: var(--theme-surface);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: var(--theme-shadow);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    border: 1px solid var(--theme-border);
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.14);
+    border-color: var(--theme-blue);
+}
+
+.action-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.action-title {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.action-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+/* Content Sections */
+.content-section {
+    background: var(--theme-surface);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: var(--theme-shadow);
+    border: 1px solid var(--theme-border);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-action {
+    color: var(--theme-blue);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border: 1px solid var(--theme-border);
+    background: #f8fbff;
+    padding: 8px 12px;
+    border-radius: 9px;
+}
+
+.section-action:hover {
+    color: var(--theme-blue-dark);
+    border-color: #bfdbfe;
+    background: #eaf2ff;
+}
+
+/* Account Info Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.info-item {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid var(--theme-border);
+}
+
+.info-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.info-value {
+    color: #1e293b;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Orders List */
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.order-card {
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s ease;
+    background: #ffffff;
+}
+
+.order-card:hover {
+    border-color: var(--theme-blue);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.order-id {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 1.1rem;
+}
+
+.order-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-processing {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-shipped {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-delivered {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.order-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.order-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.completion-pill {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #0b4a6f;
+    background: rgba(186, 230, 253, 0.92);
+    border: 1px solid rgba(125, 211, 252, 0.8);
+}
+
+.order-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.order-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-view {
+    background: #eaf2ff;
+    color: var(--theme-blue);
+}
+
+.btn-view:hover {
+    background: #dbeafe;
+}
+
+.btn-track {
+    background: linear-gradient(135deg, var(--theme-blue) 0%, var(--theme-blue-dark) 100%);
+    color: white;
+}
+
+.btn-track:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-sidebar {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        padding: 30px 20px;
+    }
+
+    .profile-header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-info h1 {
+        font-size: 1.8rem;
+    }
+
+    .profile-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .order-actions {
+        width: 100%;
+    }
+
+    .order-btn {
+        flex: 1;
+        text-align: center;
+    }
+}
+</style>
+
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-header-content">
+            <div class="profile-avatar">
+                {% if user_profile and user_profile.avatar %}
+                <img src="{{ user_profile.avatar.url }}" alt="Profile avatar">
+                {% else %}
+                👤
+                {% endif %}
+            </div>
+            <div class="profile-info">
+                <h1>Welcome back, {{ user.username }}! 👋</h1>
+                <div class="member-since">
+                    <span>📅</span>
+                    <span>Member since {{ user.date_joined|date:"F j, Y" }}</span>
+                </div>
+                <div class="completion-pill">Profile completion: {{ profile_completion }}%</div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="profile-stats">
+            <div class="stat-card">
+                <span class="stat-number">{{ total_orders }}</span>
+                <span class="stat-label">Total Orders</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ total_books }}</span>
+                <span class="stat-label">Books Purchased</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">${{ total_spent|floatformat:2 }}</span>
+                <span class="stat-label">Total Spent</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ delivered_orders }}</span>
+                <span class="stat-label">Delivered Orders</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="dashboard-sidebar">
+            <div class="nav-title">My Account</div>
+            <a href="#overview" class="nav-item active" data-nav-target="overview">
+                <span class="icon">📊</span>
+                <span>Overview</span>
+            </a>
+            <a href="#orders" class="nav-item" data-nav-target="orders">
+                <span class="icon">📦</span>
+                <span>My Orders</span>
+            </a>
+            <a href="{% url 'customer_profile_settings' %}" class="nav-item">
+                <span class="icon">⚙️</span>
+                <span>Settings</span>
+            </a>
+
+            <div class="logout-btn">
+                <a href="/customer/logout/" class="nav-item">
+                    <span class="icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-content">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <a href="/" class="action-card">
+                    <span class="action-icon">🛍️</span>
+                    <div class="action-title">Browse Books</div>
+                    <div class="action-desc">Explore our collection</div>
+                </a>
+                <a href="/cart/" class="action-card">
+                    <span class="action-icon">🛒</span>
+                    <div class="action-title">Shopping Cart</div>
+                    <div class="action-desc">View your cart</div>
+                </a>
+                <a href="/recommendations/" class="action-card">
+                    <span class="action-icon">⭐</span>
+                    <div class="action-title">Recommendations</div>
+                    <div class="action-desc">Just for you</div>
+                </a>
+                <a href="{% url 'customer_profile_settings' %}" class="action-card">
+                    <span class="action-icon">🧾</span>
+                    <div class="action-title">Update Profile</div>
+                    <div class="action-desc">Keep details up to date</div>
+                </a>
+            </div>
+
+            <!-- Profile Completion Checklist -->
+            {% if profile_completion < 100 %}
+            <section class="content-section" id="checklist" style="border-left: 4px solid #f59e0b;">
+                <div class="section-header" style="margin-bottom:14px; padding-bottom:12px;">
+                    <h2 class="section-title"><span>📋</span><span>Complete Your Profile</span></h2>
+                    <span style="font-size:0.92rem; color:#64748b;">{{ profile_completion }}% done</span>
+                </div>
+                <div style="background:#f1f5f9; border-radius:8px; height:8px; margin-bottom:18px; overflow:hidden;">
+                    <div style="background:linear-gradient(90deg,#1d4ed8,#0ea5e9); height:100%; width:{{ profile_completion }}%; transition:width 0.4s;"></div>
+                </div>
+                <ul style="list-style:none; margin:0; padding:0; display:grid; gap:10px;">
+                    {% for item in checklist %}
+                    <li style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:9px; background:{% if item.done %}#f0fdf4{% else %}#fff7ed{% endif %}; border:1px solid {% if item.done %}#bbf7d0{% else %}#fed7aa{% endif %};">
+                        <span style="font-size:1.1rem;">{% if item.done %}✅{% else %}⭕{% endif %}</span>
+                        <span style="flex:1; font-weight:600; color:{% if item.done %}#166534{% else %}#92400e{% endif %};">{{ item.label }}</span>
+                        {% if not item.done %}
+                        <a href="{% url 'customer_profile_settings' %}#tab-{{ item.tab }}" style="font-size:0.82rem; color:#1d4ed8; font-weight:700; text-decoration:none;">Fill in →</a>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endif %}
+
+            <!-- Account Information -->
+            <section class="content-section" id="overview">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span>👤</span>
+                        <span>Account Information</span>
+                    </h2>
+                    <a href="{% url 'customer_profile_settings' %}" class="section-action">Edit Profile</a>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Username</div>
+                        <div class="info-value">
+                            <span>👤</span>
+                            <span>{{ user.username }}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Email Address</div>
+                        <div class="info-value">
+                            <span>📧</span>
+                            <span>{{ user.email }}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Account Status</div>
+                        <div class="info-value">
+                            <span style="color: #10b981;">✓</span>
+                            <span style="color: #10b981;">Active & Verified</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone Number</div>
+                        <div class="info-value">
+                            <span>📱</span>
+                            <span>{{ customer.phone|default:"Not provided" }}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Address</div>
+                        <div class="info-value">
+                            <span>📍</span>
+                            <span>{{ customer.address|default:"Not provided" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="content-section" id="reviewed-books">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span>📝</span>
+                        <span>Your Reviewed Books</span>
+                    </h2>
+                    <a href="/" class="section-action">Find More Books</a>
+                </div>
+
+                <div class="orders-list">
+                    {% for review in reviewed_books %}
+                    <div class="order-card">
+                        <div class="order-header">
+                            <span class="order-id">{{ review.book.title }}</span>
+                            {% if review.rating %}
+                            <span class="order-status status-delivered">{{ review.rating.score }}★</span>
+                            {% endif %}
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail-item">
+                                <span class="detail-label">Review Title</span>
+                                <span class="detail-value">{{ review.title }}</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="detail-label">Created</span>
+                                <span class="detail-value">{{ review.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        <div class="order-actions">
+                            <a href="/{% firstof review.book.id 0 %}/" class="order-btn btn-view">Book Detail</a>
+                            <a href="/{% firstof review.book.id 0 %}/reviews/" class="order-btn btn-track">View Reviews</a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="order-card">
+                        <div class="order-details">You have not reviewed any books yet.</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Recent Orders -->
+            <section class="content-section" id="orders">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span>📦</span>
+                        <span>Recent Orders</span>
+                    </h2>
+                        <a href="#all-orders" class="section-action">View Orders</a>
+                </div>
+
+                    <!-- Order ID search -->
+                    <form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+                        <input type="search" name="order_id" value="{{ filters.order_id }}" placeholder="Search by Order #" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; width:190px;">
+                        <button type="submit" class="section-action" style="padding:8px 12px;">🔍 Search</button>
+                        {% if filters.order_id %}
+                        <a href="?" class="section-action" style="padding:8px 12px;">✕ Clear</a>
+                        {% endif %}
+                    </form>
+
+                    <!-- Filters -->
+                    <form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap;" id="orders-filter-form">
+                        {% if filters.order_id %}<input type="hidden" name="order_id" value="{{ filters.order_id }}">{% endif %}
+                        <label style="font-size:0.9rem; color:#475569;">Status
+                            <select name="status">
+                                <option value="">All</option>
+                                <option value="Pending" {% if filters.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Processing" {% if filters.status == 'Processing' %}selected{% endif %}>Processing</option>
+                                <option value="Confirmed" {% if filters.status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
+                                <option value="Delivered" {% if filters.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                            </select>
+                        </label>
+                        <label style="font-size:0.9rem; color:#475569;">From
+                            <input type="date" name="start_date" value="{{ filters.start_date }}">
+                        </label>
+                        <label style="font-size:0.9rem; color:#475569;">To
+                            <input type="date" name="end_date" value="{{ filters.end_date }}">
+                        </label>
+                        <label style="font-size:0.9rem; color:#475569;">Per page
+                            <select name="page_size">
+                                <option value="10" {% if filters.page_size == 10 %}selected{% endif %}>10</option>
+                                <option value="20" {% if filters.page_size == 20 %}selected{% endif %}>20</option>
+                                <option value="50" {% if filters.page_size == 50 %}selected{% endif %}>50</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="section-action" style="padding:8px 12px;">Apply</button>
+                    </form>
+
+                    <div class="orders-list">
+                        {% if orders_page %}
+                            {% for order in orders_page %}
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-id">Order #{{ order.id }}</span>
+                                <span class="order-status {% if order.status == 'Confirmed' %}status-shipped{% elif order.status == 'Delivered' %}status-delivered{% elif order.status == 'Processing' %}status-processing{% else %}status-processing{% endif %}">
+                                    {% if order.status == 'Confirmed' %}✓ Confirmed{% elif order.status == 'Delivered' %}✓ Delivered{% elif order.status == 'Processing' %}⏳ Processing{% else %}{{ order.status }}{% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="order-details">
+                                <div class="order-detail-item">
+                                    <span class="detail-label">Date</span>
+                                    <span class="detail-value">{{ order.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="detail-label">Items</span>
+                                    <span class="detail-value">{{ order.items.count }} Book{{ order.items.count|pluralize }}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="detail-label">Total</span>
+                                    <span class="detail-value">${{ order.total_amount|floatformat:2 }}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="detail-label">Status</span>
+                                    <span class="detail-value">{{ order.status }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="order-actions">
+                                <a href="/order/{{ order.id }}/success/" class="order-btn btn-view">View Details</a>
+                                <a href="{% url 'order_track' order_id=order.id %}" class="order-btn btn-track">Track Order</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <!-- Pagination Controls -->
+                        <div style="display:flex; justify-content:center; gap:8px; margin-top:20px;">
+                            {% if orders_page.has_previous %}
+                                <a href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ orders_page.previous_page_number }}" class="order-btn btn-view">&larr; Previous</a>
+                            {% endif %}
+                            <span style="align-self:center; color:#64748b;">Page {{ orders_page.number }} of {{ orders_page.paginator.num_pages }}</span>
+                            {% if orders_page.has_next %}
+                                <a href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ orders_page.next_page_number }}" class="order-btn btn-view">Next &rarr;</a>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📦</div>
+                        <h3>No Orders Yet</h3>
+                        <p>You haven't placed any orders. Start shopping to see your orders here!</p>
+                        <a href="/" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: white; border-radius: 8px; text-decoration: none;">Browse Books</a>
+                    </div>
+                        {% endif %}
+            </section>
+        </main>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const navLinks = document.querySelectorAll('.nav-item[data-nav-target]');
+
+    function setActiveByHash() {
+        const hash = (window.location.hash || '#overview').replace('#', '');
+        navLinks.forEach(function (link) {
+            link.classList.toggle('active', link.dataset.navTarget === hash);
+        });
+    }
+
+    navLinks.forEach(function (link) {
+        link.addEventListener('click', function () {
+            navLinks.forEach(function (el) {
+                el.classList.remove('active');
+            });
+            this.classList.add('active');
+        });
+    });
+
+    window.addEventListener('hashchange', setActiveByHash);
+    setActiveByHash();
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,746 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart - BookStore{% endblock %}
+
+{% block content %}
+
+<style>
+/* ============================================
+   SHOPPING CART PAGE STYLES
+   ============================================ */
+
+.cart-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Page Header */
+.cart-header {
+    margin-bottom: 40px;
+}
+
+.cart-title {
+    font-size: clamp(2rem, 4vw, 2.5rem);
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cart-subtitle {
+    color: #64748b;
+    font-size: 1.1rem;
+}
+
+.items-count {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #eff6ff;
+    color: #2563eb;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+/* Main Layout */
+.cart-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+}
+
+@media (max-width: 1024px) {
+    .cart-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Cart Items Section */
+.cart-items {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    border: 1px solid #dbe2f0;
+}
+
+.cart-item {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 20px;
+    padding: 24px 0;
+    border-bottom: 1px solid #e2e8f0;
+    position: relative;
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+.cart-item:hover {
+    background: #f8fafc;
+    margin: 0 -20px;
+    padding: 24px 20px;
+    border-radius: 12px;
+}
+
+/* Book Cover */
+.item-cover {
+    width: 120px;
+    height: 160px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.cart-item:hover .item-cover {
+    transform: scale(1.05);
+}
+
+.item-cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 100%);
+}
+
+.item-cover .emoji {
+    position: relative;
+    z-index: 1;
+}
+
+/* Item Info */
+.item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.item-title a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.2s ease;
+}
+
+.item-title a:hover {
+    color: #1d4ed8;
+}
+
+.item-author {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.item-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #d1fae5;
+    color: #065f46;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.stock-indicator {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Item Controls */
+.item-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 16px;
+    min-width: 180px;
+}
+
+.item-price {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1d4ed8;
+}
+
+.unit-price {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-top: -4px;
+}
+
+/* Quantity Selector */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.qty-btn {
+    width: 36px;
+    height: 36px;
+    background: white;
+    border: none;
+    border-radius: 6px;
+    color: #475569;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qty-btn:hover:not(:disabled) {
+    background: #2563eb;
+    color: white;
+    transform: scale(1.05);
+}
+
+.qty-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.qty-input {
+    width: 50px;
+    text-align: center;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Remove Button */
+.remove-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.remove-btn:hover {
+    background: #fecaca;
+    transform: translateY(-2px);
+}
+
+/* Summary Card */
+.cart-summary {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
+.summary-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    color: #475569;
+}
+
+.summary-row.total {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #1e293b;
+    padding-top: 20px;
+    margin-top: 16px;
+    border-top: 2px solid #e2e8f0;
+}
+
+.summary-value {
+    font-weight: 600;
+}
+
+.summary-value.total {
+    color: #2563eb;
+    font-size: 1.8rem;
+}
+
+/* Promo Code */
+.promo-section {
+    margin: 24px 0;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+}
+
+.promo-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.promo-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.promo-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.promo-input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.promo-btn {
+    padding: 10px 20px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.promo-btn:hover {
+    background: #1e40af;
+}
+
+/* Checkout Button */
+.checkout-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    margin-bottom: 12px;
+}
+
+.checkout-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+}
+
+.continue-btn {
+    width: 100%;
+    padding: 14px;
+    background: white;
+    color: #2563eb;
+    border: 2px solid #2563eb;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.continue-btn:hover {
+    background: #eff6ff;
+}
+
+/* Features List */
+.cart-features {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.feature-icon {
+    width: 20px;
+    height: 20px;
+    background: #dbeafe;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2563eb;
+    font-size: 0.7rem;
+}
+
+/* Empty Cart State */
+.empty-cart {
+    background: white;
+    border-radius: 16px;
+    padding: 80px 40px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.empty-icon {
+    font-size: 5rem;
+    margin-bottom: 24px;
+    opacity: 0.5;
+}
+
+.empty-cart h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.empty-cart p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin-bottom: 32px;
+}
+
+/* Recommended Section */
+.recommended-section {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 2px solid #e2e8f0;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 30px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cart-item {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .item-cover {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .item-controls {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .cart-summary {
+        position: static;
+    }
+    
+    .empty-cart {
+        padding: 60px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .quantity-selector {
+        flex: 1;
+    }
+    
+    .item-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+
+<div class="cart-container">
+    <!-- Page Header -->
+    <div class="cart-header">
+        <h1 class="cart-title">
+            <span>🛒</span>
+            <span>Shopping Cart</span>
+        </h1>
+        {% if cart %}
+        <p class="cart-subtitle">
+            <span class="items-count">{{ cart|length }} item{{ cart|length|pluralize }}</span>
+            in your cart
+        </p>
+        {% endif %}
+    </div>
+
+    {% if cart %}
+    <div class="cart-layout">
+        <!-- Cart Items -->
+        <div class="cart-items">
+            {% for item in cart %}
+            <div class="cart-item">
+                <!-- Book Cover -->
+                <a href="/{{ item.book.id }}/">
+                    <div class="item-cover">
+                        <span class="emoji">📚</span>
+                    </div>
+                </a>
+
+                <!-- Item Info -->
+                <div class="item-info">
+                    <h3 class="item-title">
+                        <a href="/{{ item.book.id }}/">{{ item.book.title }}</a>
+                    </h3>
+                    <p class="item-author">by {{ item.book.author }}</p>
+                    
+                    <div class="item-meta">
+                        <span class="meta-item">
+                            <span>⭐</span>
+                            <span>{{ item.book.rating|default:"4.5" }}</span>
+                        </span>
+                        <span class="stock-badge">
+                            <span class="stock-indicator"></span>
+                            <span>In Stock</span>
+                        </span>
+                        <span class="meta-item">
+                            <span>📖</span>
+                            <span>{{ item.book.categories_display|default:"Fiction" }}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Item Controls -->
+                <div class="item-controls">
+                    <div style="text-align: right;">
+                        <div class="item-price">${{ item.book.price }}</div>
+                        <div class="unit-price">${{ item.book.price }} each</div>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="quantity-selector">
+                        <button class="qty-btn" onclick="updateQuantity('{{ item.book.id }}', -1)">−</button>
+                        <input type="number" 
+                               class="qty-input" 
+                               value="{{ item.quantity }}" 
+                               min="1" 
+                               max="10"
+                               id="qty-{{ item.book.id }}"
+                               readonly>
+                        <button class="qty-btn" onclick="updateQuantity('{{ item.book.id }}', 1)">+</button>
+                    </div>
+
+                    <!-- Remove Button -->
+                    <a href="/remove/{{ item.book.id }}/" class="remove-btn">
+                        <span>🗑️</span>
+                        <span>Remove</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="cart-summary">
+            <h2 class="summary-title">Order Summary</h2>
+
+            <div class="summary-row">
+                <span>Subtotal ({{ cart|length }} item{{ cart|length|pluralize }})</span>
+                <span class="summary-value">${{ total }}</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span class="summary-value" style="color: #10b981;">FREE</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Tax (estimated)</span>
+                <span class="summary-value">$0.00</span>
+            </div>
+
+            <!-- Promo Code Section -->
+            <div class="promo-section">
+                <div class="promo-title">
+                    <span>🎫</span>
+                    <span>Promo Code</span>
+                </div>
+                <form class="promo-input-group">
+                    <input type="text" 
+                           class="promo-input" 
+                           placeholder="Enter code"
+                           name="promo">
+                    <button type="submit" class="promo-btn">Apply</button>
+                </form>
+            </div>
+
+            <div class="summary-row total">
+                <span>Total</span>
+                <span class="summary-value total">${{ total }}</span>
+            </div>
+
+            <!-- Checkout Buttons -->
+            <a href="/order/checkout/" class="checkout-btn">
+                <span>Proceed to Checkout</span>
+                <span>→</span>
+            </a>
+
+            <a href="/" class="continue-btn">
+                <span>←</span>
+                <span>Continue Shopping</span>
+            </a>
+
+            <!-- Features -->
+            <div class="cart-features">
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Free shipping on orders over $30</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>30-day easy returns</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Secure payment processing</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Expert customer support</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty Cart State -->
+    <div class="empty-cart">
+        <div class="empty-icon">🛒</div>
+        <h2>Your cart is empty</h2>
+        <p>Looks like you haven't added any books yet. Start exploring our amazing collection!</p>
+        <a href="/" class="btn btn-primary" style="display: inline-block; padding: 14px 32px; font-size: 1.1rem;">
+            <span>Start Shopping</span>
+            <span>→</span>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Quantity Update Function
+function updateQuantity(bookId, change) {
+    const input = document.getElementById('qty-' + bookId);
+    let currentQty = parseInt(input.value);
+    let newQty = currentQty + change;
+    
+    // Validate quantity
+    if (newQty < 1) newQty = 1;
+    if (newQty > 10) newQty = 10;
+    
+    input.value = newQty;
+    
+    // Here you would typically make an AJAX call to update the cart
+    // For now, we'll just update the display
+    console.log('Updating quantity for book ' + bookId + ' to ' + newQty);
+    
+    // Optional: Submit form to update cart
+    // You can create a form and submit it here
+}
+
+// Promo Code Form
+document.querySelector('.promo-input-group')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const promoCode = this.querySelector('.promo-input').value;
+    
+    if (promoCode) {
+        // Add your promo code validation logic here
+        alert('Promo code "' + promoCode + '" applied! (Demo)');
+    }
+});
+
+// Confirm before removing item
+document.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        if (!confirm('Are you sure you want to remove this item from your cart?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+
+{% endblock %}

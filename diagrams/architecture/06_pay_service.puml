@@ -1,0 +1,50 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 06. Payment Service Architecture
+' Render: plantuml 06_pay_service.puml  →  06_pay_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 06. Payment Service (pay-service) Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway\n/ order-service" as caller
+
+package "pay-service  :8008" {
+  component "URL Router\nurls.py" as router
+
+  package "payments app" {
+    component "PaymentListCreateView\nGET  /payments/\nPOST /payments/" as view
+    component "PaymentSerializer\n- order_id (required)\n- amount  (decimal, required)\n- status  (default: pending)" as serial
+    component "Payment Model\n──────────────\nid      : AutoField\norder_id: IntegerField\namount  : DecimalField\nstatus  : CharField\n  pending | paid | failed" as model
+  }
+}
+
+database "pay-db\n(SQLite / PostgreSQL)" as db
+
+caller --> router : HTTP GET/POST /payments/
+router --> view
+view   --> serial : validate payload
+serial --> model  : save()
+model  --> db     : INSERT payment
+
+view   --> caller : 200 OK / 201 Created
+
+note bottom of model
+  Payment record stores order_id as
+  a logical foreign key (no direct DB join
+  to order-service — database-per-service).
+  Status transitions: pending → paid → failed.
+end note
+
+@enduml

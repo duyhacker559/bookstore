@@ -1,0 +1,178 @@
+services:
+  # PostgreSQL Database (shared)
+  postgres:
+    image: postgres:14
+    container_name: bookstore-postgres
+    environment:
+      POSTGRES_USER: bookstore
+      POSTGRES_PASSWORD: bookstore_password
+      POSTGRES_DB: bookstore
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookstore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: bookstore-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django Monolith
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bookstore-web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://bookstore:bookstore_password@postgres:5432/bookstore
+      - PAYMENT_SERVICE_URL=http://payment-service:5000
+      - PAYMENT_SERVICE_TOKEN=payment-service-token-123
+      - SHIPPING_SERVICE_URL=http://shipping-service:5001
+      - SHIPPING_SERVICE_TOKEN=shipping-service-token-123
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Payment Service (FastAPI)
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: bookstore-payment-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5000 --reload
+    volumes:
+      - ./payment-service:/app
+    ports:
+      - "5000:5000"
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://bookstore:bookstore_password@postgres:5432/payment_service
+      - STRIPE_SECRET_KEY=sk_test_demo
+      - STRIPE_PUBLISHABLE_KEY=pk_test_demo
+      - PAYMENT_SERVICE_TOKEN=payment-service-token-123
+      - MONOLITH_URL=http://web:8000
+      - MONOLITH_TOKEN=payment-service-token-123
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Shipping Service (FastAPI)
+  shipping-service:
+    build:
+      context: ./shipping-service
+      dockerfile: Dockerfile
+    container_name: bookstore-shipping-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5001 --reload
+    volumes:
+      - ./shipping-service:/app
+    ports:
+      - "5001:5001"
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://bookstore:bookstore_password@postgres:5432/shipping_service
+      - SHIPPING_SERVICE_TOKEN=shipping-service-token-123
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Notification Service (FastAPI)
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: bookstore-notification-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5002 --reload
+    volumes:
+      - ./notification-service:/app
+    ports:
+      - "5002:5002"
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://bookstore:bookstore_password@postgres:5432/notification_service
+      - NOTIFICATION_SERVICE_TOKEN=notification-service-token-123
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - SMTP_HOST=localhost
+      - SMTP_PORT=1025
+      - FROM_EMAIL=noreply@bookstore.local
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  default:
+    name: bookstore-network

@@ -1,0 +1,59 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 02. Customer Service Architecture
+' Render: plantuml 02_customer_service.puml  →  02_customer_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 02. Customer Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+
+package "customer-service  :8001" {
+  component "URL Router\nurls.py" as router
+
+  package "customers app" {
+    component "CustomerListCreateView\nGET /customers/\nPOST /customers/" as view
+    component "CustomerSerializer\n- name (required)\n- email (unique)" as serial
+    component "Customer Model\n─────────────\nid  : AutoField\nname: CharField\nemail: EmailField (unique)" as model
+  }
+
+  component "Inter-service Call\nrequests.post(\n  cart-service/carts/,\n  {customer_id}\n)" as call
+}
+
+database "customer-db\n(SQLite / PostgreSQL)" as db
+
+package "cart-service  :8006" {
+  component "POST /carts/" as cart_ep
+}
+
+' ── Flow ─────────────────────────────────────────────────────────────────────
+gw      --> router  : HTTP GET/POST /customers/
+router  --> view
+view    --> serial  : validate payload
+serial  --> model   : save()
+model   --> db      : INSERT customer
+view    --> call    : after save (201)
+call    --> cart_ep : POST {customer_id}
+view    --> gw      : 201 Created / 200 OK
+
+note bottom of call
+  Side effect: creates a Cart in
+  cart-service for the new customer.
+  Cart creation failure does NOT
+  roll back the customer record
+  (compensation pattern planned).
+end note
+
+@enduml

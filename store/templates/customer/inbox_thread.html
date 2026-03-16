@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Inbox Thread - BookStore{% endblock %}
+{% block content %}
+<style>
+.thread-reply { padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.thread-reply-customer { background: #f8fafc; }
+.thread-reply-staff { background: #eef6ff; }
+</style>
+<div class="container" style="max-width: 980px; margin: 30px auto; display:grid; gap:14px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+    <h1 style="margin:0; color:#0f172a;">Inbox Thread</h1>
+    <a href="{% url 'customer_inbox' %}" style="text-decoration:none; background:#e2e8f0; color:#1e293b; padding:8px 12px; border-radius:8px;">Back to Inbox</a>
+  </div>
+
+  <section style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+    <div style="font-weight:700; color:#0f172a;">{{ inbox_message.subject }}</div>
+    <div style="color:#64748b; margin-top:4px;">{% if inbox_message.book %}Book: {{ inbox_message.book.title }} • {% endif %}Created {{ inbox_message.created_at|date:"Y-m-d H:i" }}</div>
+
+    <div id="thread-replies" style="margin-top:14px; display:grid; gap:8px;">
+      {% include "customer/_inbox_replies.html" %}
+    </div>
+
+    {% if inbox_message.replies.last and inbox_message.replies.last.sender_type == 'staff' %}
+    <form method="post" style="margin-top:10px;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="mark_as_read">
+      <button type="submit" style="background:none; border:none; text-decoration:underline; color:#2563eb; padding:0; cursor:pointer; font-size:0.9rem;">Mark as read</button>
+    </form>
+    {% endif %}
+
+    <form method="post" style="margin-top:14px; display:grid; gap:8px;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reply">
+      <label style="font-weight:600; color:#334155;">Reply</label>
+      <textarea name="reply_content" rows="4" placeholder="Type your reply..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></textarea>
+      <button type="submit" style="justify-self:start; border:none; background:#1d4ed8; color:#fff; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer;">Send Reply</button>
+    </form>
+  </section>
+</div>
+<script>
+(function () {
+  let lastToken = "{{ thread_latest_activity|default:''|escapejs }}";
+  const threadReplies = document.getElementById("thread-replies");
+
+  async function pollThreadUpdates() {
+    try {
+      const response = await fetch("{% url 'customer_inbox_thread_updates' inbox_message.id %}", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) {
+        return;
+      }
+      const data = await response.json();
+      if ((data.latest_activity || "") !== lastToken) {
+        lastToken = data.latest_activity || "";
+        if (threadReplies) {
+          threadReplies.innerHTML = data.replies_html || "";
+        }
+      }
+    } catch (error) {
+      // Ignore polling errors and retry on next interval.
+    }
+  }
+
+  setInterval(pollThreadUpdates, 4000);
+})();
+</script>
+{% endblock %}

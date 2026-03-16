@@ -1,0 +1,51 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 09. Staff Service Architecture
+' Render: plantuml 09_staff_service.puml  →  09_staff_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 09. Staff Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+
+package "staff-service  :8002" {
+  component "URL Router\nurls.py" as router
+
+  package "staffs app" {
+    component "StaffListCreateView\nGET  /staffs/\nPOST /staffs/" as view
+    component "StaffSerializer\n- name  (required)\n- email (unique)\n- role  (CharField)" as serial
+    component "Staff Model\n──────────────\nid   : AutoField\nname : CharField\nemail: EmailField (unique)\nrole : CharField\n  e.g. inventory | admin\n       editor | support" as model
+  }
+}
+
+database "staff-db\n(SQLite / PostgreSQL)" as db
+
+gw     --> router : HTTP GET/POST /staffs/
+router --> view
+view   --> serial : validate payload
+serial --> model  : save()
+model  --> db     : INSERT / SELECT staff
+
+view   --> gw : 200 OK / 201 Created
+
+note bottom of model
+  Staff records are managed independently
+  from customer-service and manager-service.
+  Role-based access control (RBAC) for
+  book management is planned in Iteration 1
+  via JWT + policy middleware.
+end note
+
+@enduml

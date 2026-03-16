@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BookStore - Your one-stop destination for all kinds of books">
+    <title>{% block title %}BookStore - Discover Your Next Great Read{% endblock %}</title>
+    
+    <style>
+        /* ============================================
+           MODERN BASE STYLES - RESET & GLOBALS
+           ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --medium: #475569;
+            --light: #64748b;
+            --lighter: #94a3b8;
+            --border: #e2e8f0;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--bg-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ============================================
+           HEADER & NAVIGATION
+           ============================================ */
+
+        header {
+            background: linear-gradient(180deg, #0f172a 0%, #172554 100%);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .top-strip {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.22);
+            backdrop-filter: blur(10px);
+        }
+
+        .top-strip-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.85rem;
+        }
+
+        .top-strip-copy,
+        .top-strip-user {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .top-strip-copy span,
+        .top-strip-user span,
+        .top-strip-user a {
+            color: rgba(255, 255, 255, 0.82);
+            text-decoration: none;
+        }
+
+        .top-strip-user a:hover {
+            color: white;
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 14px 20px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Logo */
+        .logo {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .logo-copy {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .logo-copy small {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.72);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* Search Bar in Header */
+        .search-container-base {
+            width: 100%;
+            flex: 1 1 420px;
+            max-width: 620px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            align-self: center;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .search-input {
+            padding: 13px 108px 13px 20px;
+            width: 100%;
+            height: 48px;
+            line-height: 1.2;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.02);
+            color: white;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: white;
+            color: var(--dark);
+            border-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .search-input:focus::placeholder {
+            color: var(--lighter);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--primary-dark);
+        }
+
+        .search-btn:hover {
+            background: #dbeafe;
+            transform: scale(1.1);
+        }
+
+        .search-hint {
+            position: absolute;
+            right: 56px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+
+        /* Navigation Links */
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-top: 8px;
+            padding: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            backdrop-filter: blur(6px);
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 9px 14px;
+            white-space: nowrap;
+            border-radius: 10px;
+            border: 1px solid transparent;
+        }
+
+        .nav-links a::after {
+            display: none;
+        }
+
+        .nav-links a:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .nav-links a.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.35) 0%, rgba(37, 99, 235, 0.5) 100%);
+            border-color: rgba(147, 197, 253, 0.45);
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        .nav-utility {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            margin-left: 0;
+        }
+
+        .nav-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            color: white;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .nav-chip:hover {
+            background: rgba(255, 255, 255, 0.14);
+            transform: translateY(-1px);
+        }
+
+        .chip-icon,
+        .cart-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .chip-label,
+        .cart-label {
+            white-space: nowrap;
+        }
+
+        /* Cart Badge */
+        .cart-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-radius: 999px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .cart-link:visited {
+            color: white;
+        }
+
+        .cart-link:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        .cart-badge {
+            background: var(--danger);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Divider */
+        .nav-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* ============================================
+           MESSAGES / ALERTS
+           ============================================ */
+
+        .messages-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .message {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #2563eb;
+        }
+
+        .message.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* ============================================
+           MAIN CONTENT WRAPPER
+           ============================================ */
+
+        .main-wrapper {
+            flex: 1;
+            min-height: calc(100vh - 400px);
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+
+        footer {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            margin-top: 80px;
+            padding: 60px 0 20px;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1.5fr;
+            gap: 50px;
+            margin-bottom: 50px;
+        }
+
+        .footer-col h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .footer-col p {
+            color: #94a3b8;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 12px;
+        }
+
+        .footer-col ul li a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+
+        .footer-col ul li a:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+
+        /* Social Icons */
+        .social-links {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .social-link:hover {
+            background: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Newsletter */
+        .newsletter-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .newsletter-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .newsletter-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-subscribe {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-subscribe:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Footer Bottom */
+        .footer-bottom {
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .footer-bottom a {
+            color: var(--primary-light);
+            text-decoration: none;
+        }
+
+        .footer-bottom a:hover {
+            text-decoration: underline;
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+
+        @media (max-width: 1024px) {
+            .top-strip-copy span:last-child {
+                display: none;
+            }
+
+            nav {
+                justify-content: flex-start;
+                gap: 12px;
+                padding: 12px 16px;
+            }
+
+            .logo-copy small {
+                display: none;
+            }
+
+            .search-hint,
+            .chip-label,
+            .cart-label {
+                display: none;
+            }
+
+            .nav-chip,
+            .cart-link {
+                padding: 10px 12px;
+            }
+
+            .nav-links a {
+                padding: 8px 10px;
+                font-size: 0.9rem;
+            }
+
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-strip-inner {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px 16px;
+            }
+
+            nav {
+                align-items: center;
+                padding: 14px 16px;
+                gap: 12px;
+            }
+
+            .logo-copy small {
+                display: none;
+            }
+
+            .search-container-base {
+                order: 3;
+                flex-basis: 100%;
+                max-width: 100%;
+            }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 112px;
+                left: 12px;
+                right: 12px;
+                background: linear-gradient(180deg, #172554 0%, #0f172a 100%);
+                flex-direction: column;
+                flex-wrap: nowrap;
+                padding: 20px;
+                box-shadow: var(--shadow-lg);
+                gap: 12px;
+                border-radius: 18px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                margin-top: 0;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links a {
+                width: 100%;
+                padding: 12px 16px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+            }
+
+            .nav-links a::after {
+                display: none;
+            }
+
+            .nav-utility {
+                gap: 8px;
+            }
+
+            .nav-chip {
+                display: none;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .nav-divider {
+                display: none;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .footer-col:first-child {
+                text-align: center;
+            }
+
+            .social-links {
+                justify-content: center;
+            }
+        }
+
+        /* ============================================
+           UTILITY CLASSES
+           ============================================ */
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: #1e40af;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #172554;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        /* ============================================
+           EXTRA STYLES BLOCK
+           ============================================ */
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+
+<body>
+    <!-- Header & Navigation -->
+    <header>
+        <nav>
+            <a href="{% url 'book_list' %}" class="logo">
+                <span class="logo-icon">📖</span>
+                <span class="logo-copy">
+                    <span>BookStore</span>
+                    <small>Modern online bookstore</small>
+                </span>
+            </a>
+
+            <form action="{% url 'book_catalog' %}" method="get" class="search-container-base">
+                <input type="text" 
+                       name="q" 
+                       value="{{ q|default:'' }}" 
+                       class="search-input"
+                       placeholder="Search books, authors, ISBNs..."
+                       autocomplete="off">
+                <span class="search-hint">Search</span>
+                <button type="submit" class="search-btn">🔍</button>
+            </form>
+
+            <div class="nav-utility">
+                <a href="/recommendations/" class="nav-chip" title="Recommendations" aria-label="Recommendations">
+                    <span class="chip-icon">⭐</span>
+                    <span class="chip-label">Recommendations</span>
+                </a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'customer_notifications' %}" class="nav-chip" title="Notifications" aria-label="Notifications" style="position:relative;">
+                    <span class="chip-icon">🔔</span>
+                    <span class="chip-label">Notifications</span>
+                    <span id="topbar-notification-badge" class="cart-badge" {% if not notifications_unread_count or notifications_unread_count <= 0 %}style="display:none;"{% endif %}>{{ notifications_unread_count|default:0 }}</span>
+                </a>
+                <a href="{% url 'customer_inbox' %}" class="nav-chip" title="Inbox" aria-label="Inbox">
+                    <span class="chip-icon">📥</span>
+                    <span class="chip-label">Inbox</span>
+                    <span id="topbar-inbox-badge" class="cart-badge" style="display:none;">0</span>
+                </a>
+                {% endif %}
+                <a href="/cart/" class="cart-link" aria-label="Shopping cart">
+                    <span class="cart-icon">🛒</span>
+                    <span class="cart-label">Cart</span>
+                    {% if cart_items_count and cart_items_count > 0 %}
+                    <span class="cart-badge">{{ cart_items_count }}</span>
+                    {% endif %}
+                </a>
+                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-expanded="false" aria-controls="navLinks">☰</button>
+            </div>
+
+            <div class="nav-links" id="navLinks">
+                <a href="{% url 'book_list' %}" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+                <a href="{% url 'book_catalog' %}" class="{% if '/books/' in request.path %}active{% endif %}">Books</a>
+                <a href="/recommendations/" class="{% if '/recommendations/' in request.path %}active{% endif %}">Recommendations</a>
+
+                <span class="nav-divider"></span>
+
+                {% if user.is_authenticated %}
+                <a href="/customer/profile/">Account</a>
+                <a href="{% url 'customer_notifications' %}">Notifications</a>
+                <a href="{% url 'customer_inbox' %}">Inbox</a>
+                {% if user.is_staff %}
+                <a href="{% url 'staff_home' %}" class="{% if '/staff/' in request.path %}active{% endif %}">Staff</a>
+                {% endif %}
+                {% else %}
+                <a href="/customer/login/">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>
+                {% if message.tags == 'success' %}✓
+                {% elif message.tags == 'error' %}✕
+                {% elif message.tags == 'warning' %}⚠
+                {% else %}ℹ{% endif %}
+            </span>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Global Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-grid">
+                <!-- About Column -->
+                <div class="footer-col">
+                    <a href="/" class="logo" style="margin-bottom:20px; display:inline-block;">
+                        <span class="logo-icon">📖</span>
+                        <span>BookStore</span>
+                    </a>
+                    <p>Your one-stop destination for all kinds of books. Discover, read, and grow with our extensive collection of bestsellers, classics, and hidden gems.</p>
+                    
+                    <div class="social-links">
+                        <a href="#" class="social-link" title="Facebook">f</a>
+                        <a href="#" class="social-link" title="Twitter">🐦</a>
+                        <a href="#" class="social-link" title="Instagram">📷</a>
+                        <a href="#" class="social-link" title="LinkedIn">in</a>
+                    </div>
+                </div>
+
+                <!-- Quick Links Column -->
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="/">All Books</a></li>
+                        <li><a href="/recommendations/">Bestsellers</a></li>
+                        <li><a href="/">New Arrivals</a></li>
+                        <li><a href="/">Special Offers</a></li>
+                        <li><a href="/about/">About Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Categories Column -->
+                <div class="footer-col">
+                    <h3>Categories</h3>
+                    <ul>
+                        <li><a href="?cat=Fiction">Fiction</a></li>
+                        <li><a href="?cat=Non-Fiction">Non-Fiction</a></li>
+                        <li><a href="?cat=Science">Science</a></li>
+                        <li><a href="?cat=Technology">Technology</a></li>
+                        <li><a href="?cat=Biography">Biography</a></li>
+                    </ul>
+                </div>
+
+                <!-- Newsletter Column -->
+                <div class="footer-col">
+                    <h3>Newsletter</h3>
+                    <p>Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
+                    <form action="/newsletter/" method="post">
+                        {% csrf_token %}
+                        <input type="email" 
+                               name="email"
+                               placeholder="Enter your email" 
+                               class="newsletter-input"
+                               required>
+                        <button type="submit" class="btn-subscribe">Subscribe</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <p>&copy; 2026 BookStore. All rights reserved. | 
+                   <a href="/privacy/">Privacy Policy</a> | 
+                   <a href="/terms/">Terms of Service</a>
+                </p>
+                <p style="margin-top: 10px; color: #64748b;">Made with ❤️ for book lovers everywhere</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile Menu Toggle Script -->
+    <script>
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('navLinks');
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            navLinks.classList.toggle('active');
+            toggle.setAttribute('aria-expanded', navLinks.classList.contains('active') ? 'true' : 'false');
+        }
+
+
+        (function () {
+            const isAuthenticated = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+            const isStaff = "{{ user.is_staff|yesno:'true,false' }}" === "true";
+            if (!isAuthenticated) {
+                return;
+            }
+
+            const badge = document.getElementById('topbar-notification-badge');
+            const inboxBadge = document.getElementById('topbar-inbox-badge');
+            if (!badge && !inboxBadge) {
+                return;
+            }
+
+            async function pollNotificationCount() {
+                try {
+                    let endpoint = "{% url 'customer_notification_updates' %}";
+                    if (isStaff) {
+                        endpoint = "{% url 'staff_inbox_updates' %}";
+                    }
+                    
+                    const response = await fetch(endpoint, {
+                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                    });
+                    if (!response.ok) {
+                        return;
+                    }
+                    const data = await response.json();
+                    
+                    if (isStaff) {
+                        // Staff users: show unread inbox count in inbox badge
+                        const inboxUnread = Number(data.unread_count || 0);
+                        if (inboxBadge) {
+                            if (inboxUnread > 0) {
+                                inboxBadge.textContent = String(inboxUnread);
+                                inboxBadge.style.display = '';
+                            } else {
+                                inboxBadge.textContent = '0';
+                                inboxBadge.style.display = 'none';
+                            }
+                        }
+                        // Staff notification badge is not shown
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
+                    } else {
+                        // Customer users: show notification count and inbox available count
+                        const unread = Number(data.unread_count || 0);
+                        const inboxAvailable = Number(data.inbox_available_count || 0);
+                        if (badge) {
+                            if (unread > 0) {
+                                badge.textContent = String(unread);
+                                badge.style.display = '';
+                            } else {
+                                badge.textContent = '0';
+                                badge.style.display = 'none';
+                            }
+                        }
+
+                        if (inboxBadge) {
+                            if (inboxAvailable > 0) {
+                                inboxBadge.textContent = String(inboxAvailable);
+                                inboxBadge.style.display = '';
+                            } else {
+                                inboxBadge.textContent = '0';
+                                inboxBadge.style.display = 'none';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    // Ignore polling errors and retry in next cycle.
+                }
+            }
+
+            setInterval(pollNotificationCount, 8000);
+        })();
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const navLinks = document.getElementById('navLinks');
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (!navLinks.contains(event.target) && !toggle.contains(event.target)) {
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Auto-hide messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(function(message) {
+                setTimeout(function() {
+                    message.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(function() {
+                        message.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+
+        // Add slideOut animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideOut {
+                from {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateY(-20px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

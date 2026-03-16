@@ -1,0 +1,52 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 07. Shipment Service Architecture
+' Render: plantuml 07_ship_service.puml  →  07_ship_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 07. Shipment Service (ship-service) Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway\n/ order-service" as caller
+
+package "ship-service  :8009" {
+  component "URL Router\nurls.py" as router
+
+  package "shipments app" {
+    component "ShipmentListCreateView\nGET  /shipments/\nPOST /shipments/" as view
+    component "ShipmentSerializer\n- order_id (required)\n- address  (required)\n- status   (default: preparing)" as serial
+    component "Shipment Model\n──────────────\nid      : AutoField\norder_id: IntegerField\naddress : CharField\nstatus  : CharField\n  preparing | shipped\n  delivered | failed" as model
+  }
+}
+
+database "ship-db\n(SQLite / PostgreSQL)" as db
+
+caller --> router : HTTP GET/POST /shipments/
+router --> view
+view   --> serial : validate payload
+serial --> model  : save()
+model  --> db     : INSERT shipment
+
+view   --> caller : 200 OK / 201 Created
+
+note bottom of model
+  Shipment record stores order_id as
+  a logical foreign key (database-per-service).
+  Status transitions:
+  preparing → shipped → delivered | failed.
+  Address is free-text in current version;
+  structured address schema planned for Iteration 1.
+end note
+
+@enduml

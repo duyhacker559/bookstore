@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Inbox - Staff Panel{% endblock %}
+{% block content %}
+<style>
+:root{--sb-w:240px;--blue:#2563eb;--blue-dark:#1e40af;--sidebar-bg:#0f172a;--sidebar-text:#94a3b8;}
+*{box-sizing:border-box;}
+.staff-wrap{display:flex;align-items:flex-start;gap:24px;max-width:1400px;margin:0 auto;padding:24px 20px 40px;}
+.staff-sidebar{width:var(--sb-w);flex:0 0 var(--sb-w);background:var(--sidebar-bg);display:flex;flex-direction:column;padding:16px 14px;border-radius:18px;position:sticky;top:130px;box-shadow:0 20px 45px rgba(15,23,42,.18);border:1px solid rgba(255,255,255,.06);}
+.staff-sidebar .brand{padding:8px 12px 16px;font-size:1.05rem;font-weight:700;color:#fff;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;}
+.staff-sidebar nav{padding:12px 0 0;display:grid;gap:4px;}
+.staff-sidebar nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;color:var(--sidebar-text);text-decoration:none;font-size:.93rem;font-weight:500;border-radius:12px;transition:all .18s;}
+.staff-sidebar nav a:hover{color:#fff;background:rgba(255,255,255,.05);}
+.staff-sidebar nav a.active{color:#fff;background:rgba(37,99,235,.18);box-shadow:inset 0 0 0 1px rgba(59,130,246,.15);}
+.staff-sidebar nav .nav-section{padding:14px 12px 4px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700;}
+.staff-main{flex:1;min-width:0;}
+.page-title{font-size:1.6rem;font-weight:700;color:#0f172a;margin-bottom:6px;}
+.page-sub{color:#64748b;margin-bottom:16px;}
+.filters{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.filters input,.filters select{height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:0 10px;}
+.filters button{height:38px;border:none;background:#1e40af;color:#fff;padding:0 14px;border-radius:8px;font-weight:600;cursor:pointer;}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.stat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;color:#334155;}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;}
+.row{padding:14px 16px;border-top:1px solid #f1f5f9;}
+.row:first-child{border-top:none;}
+.row-priority{background:#fff7ed; border-left:4px solid #f59e0b;}
+.state-pill{display:inline-block; padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700;}
+.state-needs{background:#fef3c7; color:#92400e;}
+.state-waiting{background:#dbeafe; color:#1e3a8a;}
+.meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#64748b;font-size:.84rem;}
+.subject{font-weight:700;color:#0f172a;margin-top:4px;}
+.content{color:#334155;margin-top:8px;}
+.note{margin-top:8px;background:#f8fafc;border-left:3px solid #94a3b8;padding:8px 10px;color:#334155;}
+.actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+.actions textarea{width:100%;min-height:54px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;}
+.actions button{height:34px;border:none;border-radius:8px;padding:0 12px;color:#fff;font-weight:600;cursor:pointer;}
+.read{background:#16a34a;}
+.unread{background:#f59e0b;}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:700;}
+.status-unread{background:#fef3c7;color:#92400e;}
+.status-read{background:#dcfce7;color:#166534;}
+.reply-bubble{padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;}
+.reply-bubble-customer{background:#f8fafc;}
+.reply-bubble-staff{background:#eff6ff;}
+.collapse-toggle{border:1px solid #cbd5e1;background:#f8fafc;color:#1e293b;border-radius:999px;padding:4px 10px;font-size:.78rem;cursor:pointer;}
+.collapse-body{margin-top:8px;}
+.is-collapsed{display:none;}
+</style>
+
+<div class="staff-wrap">
+  <aside class="staff-sidebar">
+    <div class="brand">🏪 Staff Panel</div>
+    <nav>
+      <a href="{% url 'staff_home' %}">🏠 Dashboard</a>
+      <div class="nav-section">Catalogue</div>
+      <a href="{% url 'staff_books' %}">📚 Books</a>
+      <div class="nav-section">Orders</div>
+      <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
+      <div class="nav-section">Community</div>
+      <a href="{% url 'staff_feedback_moderation' %}">🛡 Moderation</a>
+      <a href="{% url 'staff_inbox' %}" class="active">📥 Inbox</a>
+      <div class="nav-section">Insights</div>
+      <a href="{% url 'staff_analytics' %}">📊 Analytics</a>
+    </nav>
+  </aside>
+
+  <main class="staff-main">
+    <div class="page-title">📥 Customer Inbox</div>
+    <div class="page-sub">Read messages from customers and update their status.</div>
+
+    <div class="stats">
+      <div class="stat">Unread: <strong>{{ unread_count }}</strong></div>
+      <div class="stat">Read: <strong>{{ read_count }}</strong></div>
+    </div>
+
+    <form method="get" class="filters">
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search customer, subject, content...">
+      <select name="status">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+        <option value="unread" {% if status_filter == 'unread' %}selected{% endif %}>Unread</option>
+        <option value="read" {% if status_filter == 'read' %}selected{% endif %}>Read</option>
+      </select>
+      <select name="thread_state">
+        <option value="all" {% if thread_state == 'all' %}selected{% endif %}>Thread: all</option>
+        <option value="needs_staff" {% if thread_state == 'needs_staff' %}selected{% endif %}>Needs staff action</option>
+        <option value="waiting_customer" {% if thread_state == 'waiting_customer' %}selected{% endif %}>Waiting customer</option>
+      </select>
+      <select name="sort">
+        <option value="needs_staff" {% if sort_mode == 'needs_staff' %}selected{% endif %}>Sort: needs staff first</option>
+        <option value="newest" {% if sort_mode == 'newest' %}selected{% endif %}>Sort: newest first</option>
+        <option value="oldest" {% if sort_mode == 'oldest' %}selected{% endif %}>Sort: oldest first</option>
+      </select>
+      <button type="submit">Filter</button>
+    </form>
+
+    <div class="card">
+      {% for m in inbox_messages %}
+      <div class="row {% if m.needs_staff_action %}row-priority{% endif %}">
+        <div class="meta">
+          <div>{{ m.customer.name }} {% if m.book %}• Book: {{ m.book.title }}{% endif %}</div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">{{ m.created_at|date:"Y-m-d H:i" }} • <span class="status-pill status-{{ m.status }}">{{ m.get_status_display }}</span> • <a href="{% url 'staff_inbox_thread' m.id %}" style="color:#1e40af; text-decoration:none;">Open thread</a><button type="button" class="collapse-toggle" data-toggle-target="staff-thread-{{ m.id }}" aria-expanded="false">Expand</button></div>
+        </div>
+        <div id="staff-thread-{{ m.id }}" class="collapse-body is-collapsed">
+        <div class="subject">{{ m.subject }}</div>
+        {% if m.needs_staff_action %}
+        <div style="margin-top:4px;"><span class="state-pill state-needs">Needs Staff Action</span></div>
+        {% elif m.waiting_customer %}
+        <div style="margin-top:4px;"><span class="state-pill state-waiting">Waiting Customer</span></div>
+        {% endif %}
+        <div class="content">{{ m.content }}</div>
+        <div style="margin-top:6px; font-size:0.84rem; color:#64748b;">Replies: {{ m.reply_count|default:0 }}</div>
+        {% if m.last_reply %}
+        <div style="margin-top:4px; font-size:0.84rem; color:#64748b;">Last reply ({{ m.last_reply.get_sender_type_display }}): {{ m.last_reply.content|truncatechars:130 }}</div>
+        {% endif %}
+        {% if m.replies.all %}
+        <div style="margin-top:10px; display:grid; gap:8px;">
+          {% for reply in m.replies.all %}
+          <div class="reply-bubble {% if reply.sender_type == 'staff' %}reply-bubble-staff{% else %}reply-bubble-customer{% endif %}">
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">{{ reply.get_sender_type_display }} • {{ reply.created_at|date:"Y-m-d H:i" }}</div>
+            <div style="color:#334155;">{{ reply.content }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="actions">
+          {% csrf_token %}
+          <input type="hidden" name="message_id" value="{{ m.id }}">
+          <textarea name="staff_note" placeholder="Optional note to keep with this conversation...">{{ m.staff_note }}</textarea>
+          <button type="submit" name="action" value="reply" class="read">Reply & Mark Read</button>
+          <button type="submit" name="action" value="mark_read" class="read">Mark Read</button>
+          <button type="submit" name="action" value="mark_unread" class="unread">Mark Unread</button>
+        </form>
+        </div>
+      </div>
+      {% empty %}
+      <div class="row" style="color:#64748b;">No inbox messages found.</div>
+      {% endfor %}
+    </div>
+
+    {% if inbox_page and inbox_page.paginator.num_pages > 1 %}
+    <div style="display:flex; justify-content:center; gap:8px; margin-top:14px;">
+      {% if inbox_page.has_previous %}
+      <a href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if status_filter %}status={{ status_filter|urlencode }}&{% endif %}{% if thread_state %}thread_state={{ thread_state|urlencode }}&{% endif %}{% if sort_mode %}sort={{ sort_mode|urlencode }}&{% endif %}page={{ inbox_page.previous_page_number }}" style="text-decoration:none; background:#fff; border:1px solid #cbd5e1; color:#334155; padding:8px 12px; border-radius:8px;">Previous</a>
+      {% endif %}
+      <span style="align-self:center; color:#64748b;">Page {{ inbox_page.number }} of {{ inbox_page.paginator.num_pages }}</span>
+      {% if inbox_page.has_next %}
+      <a href="?{% if search_query %}q={{ search_query|urlencode }}&{% endif %}{% if status_filter %}status={{ status_filter|urlencode }}&{% endif %}{% if thread_state %}thread_state={{ thread_state|urlencode }}&{% endif %}{% if sort_mode %}sort={{ sort_mode|urlencode }}&{% endif %}page={{ inbox_page.next_page_number }}" style="text-decoration:none; background:#fff; border:1px solid #cbd5e1; color:#334155; padding:8px 12px; border-radius:8px;">Next</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </main>
+</div>
+<script>
+(function () {
+  const toggles = document.querySelectorAll(".collapse-toggle");
+  toggles.forEach(function (toggleButton) {
+    toggleButton.addEventListener("click", function () {
+      const targetId = toggleButton.getAttribute("data-toggle-target");
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const nowCollapsed = target.classList.toggle("is-collapsed");
+      toggleButton.textContent = nowCollapsed ? "Expand" : "Collapse";
+      toggleButton.setAttribute("aria-expanded", nowCollapsed ? "false" : "true");
+    });
+  });
+
+  let lastToken = "{{ staff_inbox_latest_activity|default:''|escapejs }}";
+  let lastUnread = Number("{{ staff_inbox_unread_count|default:0 }}") || 0;
+
+  async function pollInboxUpdates() {
+    try {
+      const response = await fetch("{% url 'staff_inbox_updates' %}", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) {
+        return;
+      }
+      const data = await response.json();
+      if ((data.latest_activity || "") !== lastToken || Number(data.unread_count || 0) !== lastUnread) {
+        window.location.reload();
+      }
+    } catch (error) {
+      // Ignore polling errors and retry on next interval.
+    }
+  }
+
+  setInterval(pollInboxUpdates, 8000);
+})();
+</script>
+{% endblock %}

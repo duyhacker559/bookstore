@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Notifications - BookStore{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 980px; margin: 30px auto;">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px;">
+    <h1 style="margin:0; color:#0f172a;">Your Notifications</h1>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <form method="post" action="{% url 'customer_mark_all_notifications_read' %}">
+        {% csrf_token %}
+        <button type="submit" style="border:none; background:#16a34a; color:#fff; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer;">Mark all read</button>
+      </form>
+      <a href="{% url 'customer_inbox' %}" style="text-decoration:none; background:#1e40af; color:#fff; padding:10px 14px; border-radius:8px; font-weight:600;">Open Inbox</a>
+    </div>
+  </div>
+
+  <div style="display:grid; gap:12px;">
+    {% for n in notifications %}
+    <div style="background:#fff; border:1px solid {% if n.is_read %}#e2e8f0{% else %}#93c5fd{% endif %}; border-radius:12px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+        <div>
+          <div style="font-weight:700; color:#0f172a;">{{ n.title }}</div>
+          <div style="margin-top:6px; color:#475569;">{{ n.message }}</div>
+          <div style="margin-top:8px; color:#64748b; font-size:0.85rem;">{{ n.created_at|date:"Y-m-d H:i" }} • {{ n.get_notification_type_display }}</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          {% if n.link %}
+          <a href="{{ n.link }}" style="background:#eff6ff; color:#1e40af; padding:8px 10px; border-radius:8px; text-decoration:none; font-weight:600;">Open</a>
+          {% endif %}
+          {% if not n.is_read %}
+          <form method="post" action="{% url 'customer_mark_notification_read' n.id %}">
+            {% csrf_token %}
+            <button type="submit" style="border:none; background:#16a34a; color:#fff; padding:8px 10px; border-radius:8px; font-weight:600; cursor:pointer;">Mark read</button>
+          </form>
+          {% else %}
+          <span style="padding:8px 10px; border-radius:8px; background:#f1f5f9; color:#475569; font-size:0.85rem;">Read</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; color:#64748b;">No notifications yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+@startuml
+
+title Section 18.3 - Iteration 3 Event-Driven Workflow
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+component "Order Orchestrator" as orchestrator
+component "Payment Service" as payment
+component "Shipping Service" as shipping
+component "Notification Service" as notification
+queue "RabbitMQ Event Bus" as bus
+
+orchestrator --> bus : publish OrderCreated
+bus --> payment : consume OrderCreated
+payment --> bus : publish PaymentSucceeded | PaymentFailed
+bus --> shipping : consume PaymentSucceeded
+shipping --> bus : publish ShipmentCreated
+bus --> notification : consume workflow events
+
+note right of orchestrator
+Compensation logic can react to
+PaymentFailed or ShipmentFailed.
+end note
+
+@enduml

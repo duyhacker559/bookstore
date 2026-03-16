@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmation - BookStore{% endblock %}
+
+{% block content %}
+<style>
+.order-detail-page { max-width: 1100px; margin: 0 auto; padding: 36px 20px 48px; }
+.hero { background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 60%,#0f172a 100%); color: #fff; border-radius: 18px; padding: 28px; box-shadow: 0 16px 34px rgba(15,23,42,.2); margin-bottom: 22px; }
+.hero h1 { margin: 0 0 8px; font-size: clamp(1.5rem,2.6vw,2rem); }
+.hero p { margin: 0; opacity: .9; }
+.hero-meta { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 10px; }
+.hero-chip { background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 10px 12px; }
+.hero-chip .label { font-size: .75rem; opacity: .85; text-transform: uppercase; letter-spacing: .04em; }
+.hero-chip .value { margin-top: 4px; font-weight: 700; }
+.layout { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; }
+.card { background: #fff; border: 1px solid #dbe2f0; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,.06); }
+.card-head { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 800; color: #1e293b; }
+.card-body { padding: 14px 16px; }
+.item { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #eef2f7; }
+.item:last-child { border-bottom: none; }
+.cover { width: 64px; height: 86px; border-radius: 8px; border: 1px solid #cbd5e1; background: linear-gradient(135deg,#1d4ed8,#1e3a8a); color: #dbeafe; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.cover img { width:100%; height:100%; object-fit:cover; }
+.title { margin: 0; color: #0f172a; font-weight: 700; font-size: .96rem; }
+.meta { margin-top: 4px; color: #64748b; font-size: .85rem; }
+.price { text-align: right; color: #1e40af; font-weight: 800; }
+.summary-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; color:#475569; }
+.summary-row.total { padding-top:10px; border-top:1px solid #e2e8f0; font-size:1.05rem; font-weight:800; color:#0f172a; }
+.summary-row.total .amount { color:#1e40af; }
+.pill { display:inline-block; padding:5px 10px; border-radius:999px; font-size:.78rem; font-weight:700; }
+.pill-ok { background:#dcfce7; color:#166534; }
+.pill-info { background:#dbeafe; color:#1e40af; }
+.section-note { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; color:#475569; font-size:.9rem; }
+.actions { margin-top: 18px; display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+.btn { display:block; text-align:center; padding:12px; border-radius:10px; text-decoration:none; font-weight:700; }
+.btn-primary { background: linear-gradient(135deg,#1d4ed8,#1e3a8a); color:#fff; }
+.btn-secondary { background:#334155; color:#fff; }
+.btn-ghost { border:1px solid #1d4ed8; color:#1d4ed8; background:#fff; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+</style>
+
+<div class="order-detail-page">
+    <div class="hero">
+        <h1>Order Details</h1>
+        <p>Your order has been confirmed. Here is the full summary of your purchase.</p>
+        <div class="hero-meta">
+            <div class="hero-chip"><div class="label">Order ID</div><div class="value">#{{ order.id }}</div></div>
+            <div class="hero-chip"><div class="label">Placed On</div><div class="value">{{ order.created_at|date:'M d, Y' }}</div></div>
+            <div class="hero-chip"><div class="label">Status</div><div class="value">{{ order.status }}</div></div>
+            <div class="hero-chip"><div class="label">Items</div><div class="value">{{ total_units }}</div></div>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="card">
+            <div class="card-head">Items Ordered</div>
+            <div class="card-body">
+                {% for item in order_items %}
+                <div class="item">
+                    <a class="cover" href="{% url 'book_detail' book_id=item.book.id %}" aria-label="View {{ item.book.title }} details">
+                        {% if item.book.cover_image %}
+                        <img src="{{ item.book.cover_image }}" alt="{{ item.book.title }} cover">
+                        {% else %}
+                        <span>📘</span>
+                        {% endif %}
+                    </a>
+                    <div>
+                        <p class="title">{{ item.book.title }}</p>
+                        <div class="meta">Unit price: ${{ item.price|floatformat:2 }} | Qty: {{ item.quantity }}</div>
+                    </div>
+                    <div class="price">${{ item.line_total|floatformat:2 }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div>
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-head">Payment & Shipping</div>
+                <div class="card-body">
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:.78rem; color:#64748b; text-transform:uppercase; letter-spacing:.04em;">Payment</div>
+                        {% if payment %}
+                        <div style="margin-top:6px; color:#0f172a; font-weight:600;">{{ payment.method_name }}</div>
+                        <div style="margin-top:6px;"><span class="pill pill-ok">{{ payment.status }}</span></div>
+                        {% else %}
+                        <div style="margin-top:6px; color:#64748b;">Payment record unavailable</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <div style="font-size:.78rem; color:#64748b; text-transform:uppercase; letter-spacing:.04em;">Shipping</div>
+                        {% if shipment %}
+                        <div style="margin-top:6px; color:#0f172a; font-weight:600;">{{ shipment.method_name }}</div>
+                        <div style="margin-top:6px;"><span class="pill pill-info">{{ shipment.status }}</span></div>
+                        <div style="margin-top:8px; color:#475569; font-size:.9rem;">{{ shipment.address }}</div>
+                        {% else %}
+                        <div style="margin-top:6px; color:#64748b;">Shipping details unavailable</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">Amount Breakdown</div>
+                <div class="card-body">
+                    <div class="summary-row"><span>Subtotal</span><strong>${{ subtotal|floatformat:2 }}</strong></div>
+                    <div class="summary-row"><span>Shipping fee</span><strong>${{ shipping_fee|floatformat:2 }}</strong></div>
+                    <div class="summary-row"><span>Tax</span><strong>${{ tax_amount|floatformat:2 }}</strong></div>
+                    <div class="summary-row total"><span>Total Paid</span><span class="amount">${{ order.total_amount|floatformat:2 }}</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-note" style="margin-top: 14px;">A confirmation email has been sent to <strong>{{ user.email }}</strong>.</div>
+
+    <div class="actions">
+        <a href="{% url 'book_list' %}" class="btn btn-primary">Continue Shopping</a>
+        {% if shipment %}
+        <a href="{% url 'order_track' order_id=order.id %}" class="btn btn-secondary">Track Order</a>
+        {% endif %}
+        <a href="{% url 'customer_home' %}" class="btn btn-ghost">Back to My Account</a>
+    </div>
+</div>
+{% endblock %}

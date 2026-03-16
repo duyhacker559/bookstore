@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Checkout - BookStore{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 20px;">
+    <h1 style="margin-bottom: 30px; color: #0f172a;">📋 Checkout</h1>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+        <!-- Checkout Form -->
+        <div style="background: white; padding: 30px; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
+            <h2 style="margin-top: 0; margin-bottom: 25px; color: #1e293b;">Order Details</h2>
+
+            <form method="POST" style="display: grid; gap: 20px;">
+                {% csrf_token %}
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Full Name</label>
+                    <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Email</label>
+                    <input type="email" name="email" value="{{ user.email }}" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Phone</label>
+                    <input type="tel" name="phone" placeholder="(123) 456-7890" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Delivery Address</label>
+                    <textarea name="address" placeholder="Street address, City, State, ZIP" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem; min-height: 100px; resize: vertical;"></textarea>
+                </div>
+
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #1e293b;">Shipping Method</h3>
+                    
+                    {% for method, details in shipping_options.items %}
+                    <label style="display: flex; align-items: center; padding: 15px; border: 1px solid #dbe2f0; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s; background:#f8fbff;">
+                        <input type="radio" name="shipping_method" value="{{ method }}" {% if forloop.first %}checked{% endif %} style="margin-right: 12px; width: 20px; height: 20px; cursor: pointer;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #1e293b;">{{ details.name }}</div>
+                            <div style="color: #64748b; font-size: 0.9rem;">Estimated: {{ details.estimated_days }} day{{ details.estimated_days|pluralize }}</div>
+                        </div>
+                        <div style="font-weight: 600; color: #2563eb;">${{ details.fee|floatformat:2 }}</div>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" style="padding: 14px 32px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 20px;">Continue to Payment</button>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div style="background: white; padding: 25px; border-radius: 14px; height: fit-content; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
+            <h2 style="margin-top: 0; margin-bottom: 20px; color: #1e293b;">Order Summary</h2>
+            
+            {% for item in cart_items %}
+            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #64748b;">{{ item.book.title }}</span>
+                    <span style="color: #1e293b; font-weight: 600;">${{ item.book.price|floatformat:2 }}</span>
+                </div>
+                <div style="color: #94a3b8; font-size: 0.9rem;">Qty: {{ item.quantity }}</div>
+            </div>
+            {% endfor %}
+
+            <div style="border-top: 2px solid #e2e8f0; padding-top: 15px; margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: #64748b;">Subtotal:</span>
+                    <span style="color: #1e293b; font-weight: 600;">${{ subtotal|floatformat:2 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="color: #64748b;">Tax (8%):</span>
+                    <span style="color: #1e293b; font-weight: 600;">${{ tax|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 1.1rem;">
+                <span style="color: #1e293b; font-weight: 700;">Total:</span>
+                <span style="color: #2563eb; font-weight: 700;">${{ total|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

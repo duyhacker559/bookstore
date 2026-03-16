@@ -1,0 +1,51 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 11. Catalog Service Architecture
+' Render: plantuml 11_catalog_service.puml  →  11_catalog_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 11. Catalog Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+actor "book-service\n(category lookup)" as bs
+
+package "catalog-service  :8004" {
+  component "URL Router\nurls.py" as router
+
+  package "catalogs app" {
+    component "CatalogListCreateView\nGET  /catalogs/\nPOST /catalogs/" as view
+    component "CatalogSerializer\n- name        (required)\n- description (text)" as serial
+    component "Catalog Model\n──────────────\nid         : AutoField\nname       : CharField\ndescription: TextField" as model
+  }
+}
+
+database "catalog-db\n(SQLite / PostgreSQL)" as db
+
+gw --> router  : HTTP GET/POST /catalogs/
+bs ..> router  : GET /catalogs/ (lookup, planned)
+router --> view
+view   --> serial : validate payload
+serial --> model  : save()
+model  --> db     : INSERT / SELECT catalog
+view   --> gw : 200 OK / 201 Created
+
+note bottom of model
+  Catalog represents a book category/genre.
+  book-service will reference catalog_id
+  as a logical key in a future iteration
+  to support browsing by category.
+end note
+
+@enduml

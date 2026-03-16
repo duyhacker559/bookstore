@@ -1,0 +1,77 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – Full System Overview
+' Render: plantuml 00_overview.puml  →  00_overview.png
+' ─────────────────────────────────────────────────────────────────────────────
+title BookStore Microservices — Full System Overview
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor Customer
+actor Staff
+actor Manager
+
+package "API Gateway\n:8000" {
+  component "api-gateway\nDjango REST" as gw
+}
+
+package "Identity Services" {
+  component "customer-service\n:8001" as cs
+  component "staff-service\n:8002"    as ss
+  component "manager-service\n:8003"  as ms
+}
+
+package "Catalogue Services" {
+  component "catalog-service\n:8004"  as cats
+  component "book-service\n:8005"     as bs
+}
+
+package "Ordering Services" {
+  component "cart-service\n:8006"     as carts
+  component "order-service\n:8007"    as os
+}
+
+package "Operations" {
+  component "pay-service\n:8008"      as ps
+  component "ship-service\n:8009"     as shs
+}
+
+package "Engagement" {
+  component "comment-rate-service\n:8010"     as crs
+  component "recommender-ai-service\n:8011"   as ras
+}
+
+' ── Actor → Gateway ──────────────────────────────────────────────────────────
+Customer --> gw
+Staff    --> gw
+Manager  --> gw
+
+' ── Gateway → Services ───────────────────────────────────────────────────────
+gw --> cs    : /customers/
+gw --> ss    : /staffs/
+gw --> ms    : /managers/
+gw --> cats  : /catalogs/
+gw --> bs    : /books/
+gw --> carts : /cart-items/, /cart-detail/
+gw --> os    : /orders/
+gw --> ps    : /payments/
+gw --> shs   : /shipments/
+gw --> crs   : /comment-rates/
+gw --> ras   : /recommendations/
+
+' ── Inter-service calls ───────────────────────────────────────────────────────
+cs    --> carts : POST /carts/ (auto create)
+carts --> bs    : GET  /books/ (validate book_id)
+
+@enduml

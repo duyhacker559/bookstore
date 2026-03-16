@@ -1,0 +1,68 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 01. API Gateway Architecture
+' Render: plantuml 01_api_gateway.puml  →  01_api_gateway.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 01. API Gateway Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+skinparam noteBorderColor #007B83
+skinparam noteBackgroundColor #EAF2FB
+
+actor "Client Browser" as client
+
+package "api-gateway  :8000" {
+  component "URL Router\nurls.py" as router
+  component "Views\n(proxy + aggregate)" as views
+  note right of views
+    GET  /
+    GET|POST /books/
+    GET|POST /customers/
+    GET|POST /cart-items/
+    GET|POST /cart-detail/
+    GET      /services/
+    GET      /services/{key}/
+    GET      /health/
+  end note
+}
+
+package "Downstream Services (internal network)" {
+  component "customer-service\n:8001"         as cs
+  component "book-service\n:8005"             as bs
+  component "cart-service\n:8006"             as carts
+  component "order-service\n:8007"            as os
+  component "pay-service\n:8008"              as ps
+  component "ship-service\n:8009"             as shs
+  component "comment-rate-service\n:8010"     as crs
+  component "staff-service\n:8002"            as ss
+  component "manager-service\n:8003"          as ms
+  component "catalog-service\n:8004"          as cats
+  component "recommender-ai-service\n:8011"   as ras
+}
+
+client  --> router  : HTTP request
+router  --> views
+views   --> cs
+views   --> bs
+views   --> carts
+views   --> os
+views   --> ps
+views   --> shs
+views   --> crs
+views   --> ss
+views   --> ms
+views   --> cats
+views   --> ras
+
+@enduml

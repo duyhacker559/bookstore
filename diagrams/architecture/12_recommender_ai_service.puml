@@ -1,0 +1,60 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 12. Recommender AI Service Architecture
+' Render: plantuml 12_recommender_ai_service.puml  →  12_recommender_ai_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 12. Recommender AI Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+
+package "recommender-ai-service  :8011" {
+  component "URL Router\nurls.py" as router
+
+  package "recommendations app" {
+    component "RecommendationListCreateView\nGET  /recommendations/\nPOST /recommendations/" as view
+    component "RecommendationSerializer\n- customer_id (required)\n- book_id     (required)\n- score       (float 0.0–1.0)" as serial
+    component "Recommendation Model\n──────────────\nid         : AutoField\ncustomer_id: IntegerField\nbook_id    : IntegerField\nscore      : FloatField" as model
+  }
+
+  component "Recommendation Engine\n(planned)\n────────────────────\nReads CommentRate data\nComputes similarity scores\nWrites Recommendation rows" as engine
+}
+
+database "recommendation-db\n(SQLite / PostgreSQL)" as db
+
+package "comment-rate-service  :8010" {
+  component "GET /comment-rates/\n(interaction features)" as cr_ep
+}
+
+gw      --> router  : HTTP GET/POST /recommendations/
+router  --> view
+view    --> serial  : validate payload
+serial  --> model   : save()
+model   --> db      : INSERT / SELECT recommendation
+
+engine  ..> cr_ep   : periodic fetch ratings
+engine  ..> model   : write computed scores
+
+view    --> gw      : 200 OK / 201 Created
+
+note bottom of engine
+  Current: scores are saved manually via POST.
+  Planned: scheduled job reads CommentRate
+  interaction data, runs collaborative filtering
+  or content-based model, and writes scores
+  to recommendation-db automatically.
+end note
+
+@enduml

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Payment - BookStore{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 40px 20px;">
+    <h1 style="margin-bottom: 30px; color: #0f172a;">💳 Payment</h1>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+        <!-- Payment Form -->
+        <div style="background: white; padding: 30px; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
+            <h2 style="margin-top: 0; margin-bottom: 25px; color: #1e293b;">Select Payment Method</h2>
+
+            <form method="POST" style="display: grid; gap: 15px;">
+                {% csrf_token %}
+
+                {% for method, name in payment_methods.items %}
+                <label style="display: flex; align-items: center; padding: 20px; border: 2px solid #dbe2f0; border-radius: 10px; cursor: pointer; transition: all 0.3s; background:#f8fbff;" onchange="this.style.borderColor='#1d4ed8'">
+                    <input type="radio" name="method" value="{{ method }}" {% if forloop.first %}checked{% endif %} style="margin-right: 15px; width: 20px; height: 20px; cursor: pointer;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #1e293b;">{{ name }}</div>
+                        {% if method == 'cod' %}
+                        <div style="color: #64748b; font-size: 0.9rem;">Pay when you receive your order</div>
+                        {% elif method == 'credit_card' %}
+                        <div style="color: #64748b; font-size: 0.9rem;">Visa, Mastercard, American Express</div>
+                        {% elif method == 'wallet' %}
+                        <div style="color: #64748b; font-size: 0.9rem;">Digital wallet payment</div>
+                        {% else %}
+                        <div style="color: #64748b; font-size: 0.9rem;">Debit card payment</div>
+                        {% endif %}
+                    </div>
+                </label>
+                {% endfor %}
+
+                <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                    <p style="margin: 0; color: #15803d; font-size: 0.9rem;">✅ Your payment information is secure and encrypted</p>
+                </div>
+
+                <button type="submit" style="padding: 14px 32px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 20px;">Complete Purchase</button>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div style="background: white; padding: 25px; border-radius: 14px; height: fit-content; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
+            <h2 style="margin-top: 0; margin-bottom: 20px; color: #1e293b;">Order #{{ order.id }}</h2>
+            
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: #64748b;">Amount:</span>
+                    <span style="color: #1e293b; font-weight: 600;">${{ order.total_amount|floatformat:2 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #64748b;">Status:</span>
+                    <span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; font-weight: 600;">Pending Payment</span>
+                </div>
+            </div>
+
+            <div style="background: #eff6ff; padding: 15px; border-radius: 6px;">
+                <h3 style="margin-top: 0; margin-bottom: 12px; color: #1e40af;">Items in Order</h3>
+                {% if order.items.all %}
+                    {% for item in order.items.all %}
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #bfdbfe;">
+                        <span style="color: #1e293b;">{{ item.quantity }}x {{ item.book.title }}</span>
+                        <span style="color: #2563eb; font-weight: 600;">${{ item.price|floatformat:2 }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

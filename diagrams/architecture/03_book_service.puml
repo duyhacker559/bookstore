@@ -1,0 +1,52 @@
+@startuml
+' ─────────────────────────────────────────────────────────────────────────────
+' BookStore Microservices – 03. Book Service Architecture
+' Render: plantuml 03_book_service.puml  →  03_book_service.png
+' ─────────────────────────────────────────────────────────────────────────────
+title 03. Book Service Architecture
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #4f5b66
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2c5aa0
+skinparam packageBackgroundColor #f7f9fc
+skinparam componentBorderColor #2c5aa0
+skinparam componentBackgroundColor #ffffff
+skinparam databaseBorderColor #8f5c2c
+skinparam databaseBackgroundColor #fff8ef
+skinparam actorBorderColor #1A376C
+skinparam actorBackgroundColor #EAF2FB
+
+actor "API Gateway" as gw
+actor "cart-service\n(book validation)" as cart_svc
+
+package "book-service  :8005" {
+  component "URL Router\nurls.py" as router
+
+  package "books app" {
+    component "BookListCreateView\nGET  /books/\nPOST /books/" as view
+    component "BookSerializer\n- title  (required)\n- author (required)\n- price  (decimal)\n- stock  (integer)" as serial
+    component "Book Model\n─────────────\nid    : AutoField\ntitle : CharField\nauthor: CharField\nprice : DecimalField\nstock : IntegerField" as model
+  }
+}
+
+database "book-db\n(SQLite / PostgreSQL)" as db
+
+gw        --> router   : HTTP GET/POST /books/
+cart_svc  --> router   : GET /books/ (validate book_id)
+router    --> view
+view      --> serial   : validate payload
+serial    --> model    : save()
+model     --> db       : INSERT / SELECT book
+view      --> gw       : 200 OK / 201 Created
+view      --> cart_svc : 200 OK  [book list for validation]
+
+note bottom of model
+  Staff creates books via POST /books/.
+  cart-service calls GET /books/ to
+  verify a book_id exists before adding
+  it to a cart item.
+end note
+
+@enduml

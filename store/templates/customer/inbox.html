@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Inbox - BookStore{% endblock %}
+{% block content %}
+<style>
+.msg-status { font-size: 0.82rem; color: #334155; border-radius: 999px; padding: 2px 8px; }
+.msg-status-unread { background: #fef3c7; }
+.msg-status-read { background: #dcfce7; }
+.reply-bubble { padding: 8px 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.reply-bubble-customer { background: #f8fafc; }
+.reply-bubble-staff { background: #eef6ff; }
+.collapse-toggle { border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; }
+.collapse-body { margin-top: 8px; }
+.is-collapsed { display: none; }
+</style>
+<div class="container" style="max-width: 1080px; margin: 30px auto; display:grid; gap:18px;">
+  <h1 style="margin:0; color:#0f172a;">Customer Inbox</h1>
+
+  <section style="background:#fff; border:1px solid #dbe2f0; border-radius:12px; padding:18px;">
+    <h2 style="margin:0 0 12px; color:#0f172a;">Send Message to Staff</h2>
+    <form method="post" style="display:grid; gap:10px;">
+      {% csrf_token %}
+      <div>
+        <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Book (optional)</label>
+        <select name="book_id" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+          <option value="">General question</option>
+          {% if prefill_book %}
+          <option value="{{ prefill_book.id }}" selected>{{ prefill_book.title }}</option>
+          {% endif %}
+        </select>
+      </div>
+      <div>
+        <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Subject</label>
+        <input type="text" name="subject" required maxlength="200" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+      </div>
+      <div>
+        <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Message</label>
+        <textarea name="content" required rows="5" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></textarea>
+      </div>
+      <button type="submit" style="border:none; background:#1d4ed8; color:white; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer;">Send to Staff</button>
+    </form>
+  </section>
+
+  <section style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:18px;">
+    <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+      <h2 style="margin:0; color:#0f172a;">Sent Messages</h2>
+      <form method="get" style="display:flex; gap:8px; align-items:center;">
+        <label style="font-size:0.84rem; color:#64748b;">Thread state</label>
+        <select name="thread_state" style="height:34px; border:1px solid #cbd5e1; border-radius:8px; padding:0 8px;">
+          <option value="all" {% if thread_state == 'all' %}selected{% endif %}>All</option>
+          <option value="awaiting_staff" {% if thread_state == 'awaiting_staff' %}selected{% endif %}>Awaiting staff</option>
+          <option value="awaiting_you" {% if thread_state == 'awaiting_you' %}selected{% endif %}>Awaiting you</option>
+        </select>
+        <button type="submit" style="height:34px; border:none; background:#1e40af; color:#fff; padding:0 10px; border-radius:8px; font-weight:600; cursor:pointer;">Apply</button>
+      </form>
+    </div>
+    <div style="display:grid; gap:10px;">
+      {% for msg in inbox_messages %}
+      <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+        <div style="display:flex; justify-content:space-between; gap:10px;">
+          <div style="font-weight:700; color:#0f172a;">{{ msg.subject }}</div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span style="font-size:0.82rem; color:#64748b;">{{ msg.created_at|date:"Y-m-d H:i" }}</span>
+            <button type="button" class="collapse-toggle" data-toggle-target="customer-thread-{{ msg.id }}" aria-expanded="false">Expand</button>
+          </div>
+        </div>
+        <div id="customer-thread-{{ msg.id }}" class="collapse-body is-collapsed">
+        <div style="margin-top:6px; color:#475569;">{{ msg.content }}</div>
+        <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <span style="font-size:0.82rem; color:#64748b;">{% if msg.book %}Book: {{ msg.book.title }}{% else %}General{% endif %}</span>
+          <span class="msg-status {% if msg.status == 'unread' %}msg-status-unread{% else %}msg-status-read{% endif %}">{% if msg.status == 'unread' %}Awaiting staff{% else %}Handled{% endif %}</span>
+          <span style="font-size:0.82rem; color:#64748b;">Replies: {{ msg.reply_count|default:0 }}</span>
+          <a href="{% url 'customer_inbox_thread' msg.id %}" style="text-decoration:none; font-size:0.82rem; background:#e2e8f0; color:#1e293b; padding:2px 8px; border-radius:999px;">Open thread</a>
+          {% if msg.last_reply and msg.last_reply.sender_type == 'staff' %}
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_as_read">
+            <input type="hidden" name="message_id" value="{{ msg.id }}">
+            <button type="submit" style="background:none; border:none; text-decoration:underline; color:#2563eb; padding:0; cursor:pointer; font-size:0.82rem;">Mark as read</button>
+          </form>
+          {% endif %}
+        </div>
+        {% if msg.last_reply %}
+        <div style="margin-top:8px; font-size:0.84rem; color:#64748b;">
+          Last reply ({{ msg.last_reply.get_sender_type_display }}): {{ msg.last_reply.content|truncatechars:120 }}
+        </div>
+        {% endif %}
+        {% if msg.replies.all %}
+        <div style="margin-top:10px; display:grid; gap:8px;">
+          {% for reply in msg.replies.all %}
+          <div class="reply-bubble {% if reply.sender_type == 'staff' %}reply-bubble-staff{% else %}reply-bubble-customer{% endif %}">
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">{{ reply.get_sender_type_display }} • {{ reply.created_at|date:"Y-m-d H:i" }}</div>
+            <div style="color:#334155;">{{ reply.content }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" style="margin-top:10px; display:grid; gap:8px;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reply">
+          <input type="hidden" name="message_id" value="{{ msg.id }}">
+          <textarea name="reply_content" rows="3" placeholder="Reply to this conversation..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"></textarea>
+          <button type="submit" style="justify-self:start; border:none; background:#2563eb; color:#fff; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer;">Send Reply</button>
+        </form>
+        </div>
+      </div>
+      {% empty %}
+      <div style="color:#64748b;">No messages sent yet.</div>
+      {% endfor %}
+    </div>
+
+    {% if inbox_page and inbox_page.paginator.num_pages > 1 %}
+    <div style="display:flex; justify-content:center; gap:8px; margin-top:14px;">
+      {% if inbox_page.has_previous %}
+      <a href="?{% if thread_state %}thread_state={{ thread_state|urlencode }}&{% endif %}page={{ inbox_page.previous_page_number }}" style="text-decoration:none; background:#fff; border:1px solid #cbd5e1; color:#334155; padding:8px 12px; border-radius:8px;">Previous</a>
+      {% endif %}
+      <span style="align-self:center; color:#64748b;">Page {{ inbox_page.number }} of {{ inbox_page.paginator.num_pages }}</span>
+      {% if inbox_page.has_next %}
+      <a href="?{% if thread_state %}thread_state={{ thread_state|urlencode }}&{% endif %}page={{ inbox_page.next_page_number }}" style="text-decoration:none; background:#fff; border:1px solid #cbd5e1; color:#334155; padding:8px 12px; border-radius:8px;">Next</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+</div>
+<script>
+(function () {
+  const toggles = document.querySelectorAll(".collapse-toggle");
+  toggles.forEach(function (toggleButton) {
+    toggleButton.addEventListener("click", function () {
+      const targetId = toggleButton.getAttribute("data-toggle-target");
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const nowCollapsed = target.classList.toggle("is-collapsed");
+      toggleButton.textContent = nowCollapsed ? "Expand" : "Collapse";
+      toggleButton.setAttribute("aria-expanded", nowCollapsed ? "false" : "true");
+    });
+  });
+
+  let lastToken = "{{ inbox_latest_activity|default:''|escapejs }}";
+  let lastUnread = Number("{{ inbox_unread_count|default:0 }}") || 0;
+
+  async function pollInboxUpdates() {
+    try {
+      const response = await fetch("{% url 'customer_inbox_updates' %}", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!response.ok) {
+        return;
+      }
+      const data = await response.json();
+      if ((data.latest_activity || "") !== lastToken || Number(data.unread_count || 0) !== lastUnread) {
+        window.location.reload();
+      }
+    } catch (error) {
+      // Ignore polling errors and retry on next interval.
+    }
+  }
+
+  setInterval(pollInboxUpdates, 8000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+@startuml
+
+title Section 18.2 - Iteration 1 Security Hardening
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+actor Customer
+actor Staff
+
+component "API Gateway" as gateway
+component "Identity Service\nJWT + RBAC" as identity
+component "Django Web App" as django
+component "Payment Service" as payment
+component "Shipping Service" as shipping
+
+Customer --> gateway
+Staff --> gateway
+gateway --> identity : token validation
+gateway --> django : authorized request
+gateway --> payment : service route
+gateway --> shipping : service route
+identity --> django : claims propagation
+
+note bottom of identity
+Adds authentication + role checks
+for customer/staff operations.
+end note
+
+@enduml

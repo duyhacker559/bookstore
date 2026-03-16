@@ -1,0 +1,39 @@
+@startuml
+
+title Section 18.1 - Current Hybrid Architecture
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+actor Customer
+
+package "Django Monolith" {
+  component "Web UI + Order Orchestration" as django
+}
+
+package "Microservices" {
+  component "Payment Service" as payment
+  component "Shipping Service" as shipping
+  component "Notification Service" as notification
+  queue "RabbitMQ" as rabbit
+}
+
+database "Bookstore DB" as db_store
+database "Payment DB" as db_payment
+database "Shipping DB" as db_shipping
+database "Notification DB" as db_notification
+
+Customer --> django
+
+django --> payment : HTTP
+django --> shipping : HTTP
+payment --> rabbit : publish events
+shipping --> rabbit : publish events
+rabbit --> notification : consume events
+
+django --> db_store
+payment --> db_payment
+shipping --> db_shipping
+notification --> db_notification
+
+@enduml

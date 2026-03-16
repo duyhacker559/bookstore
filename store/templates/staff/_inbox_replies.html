@@ -1,0 +1,8 @@
+{% for reply in inbox_message.replies.all %}
+<div class="thread-reply {% if reply.sender_type == 'staff' %}thread-reply-staff{% else %}thread-reply-customer{% endif %}">
+  <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">{{ reply.get_sender_type_display }} • {{ reply.created_at|date:"Y-m-d H:i" }}</div>
+  <div style="color:#334155;">{{ reply.content }}</div>
+</div>
+{% empty %}
+<div style="color:#64748b;">No replies yet.</div>
+{% endfor %}
