@@ -70,3 +70,9 @@ test_*.py
 phase3_e2e_test.py
 store/tests*.py
 payment-service/tests/
+
+# Assignment source/exports and local generators
+generate_*.py
+ass05*
+*/ass05*
+tutorial.pdf
