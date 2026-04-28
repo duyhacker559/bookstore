@@ -1,17 +1,32 @@
-import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    API_TITLE: str = "Bookstore AI Behavior Service"
-    API_VERSION: str = "1.0.0"
-    AUTH_TOKEN: str = os.getenv("AI_BEHAVIOR_SERVICE_TOKEN", "ai-behavior-service-token-123")
-    DB_PATH: str = os.getenv("AI_BEHAVIOR_DB_PATH", "./data/behavior_events.db")
-    GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    GEMINI_API_VERSION: str = os.getenv("GEMINI_API_VERSION", "v1beta")
+    service_name: str = "Bookstore AI Service"
+    api_version: str = "v1"
+    auth_token: str = "ai-behavior-service-token-123"
+
+    data_path: str = "./data"
+    checkpoint_path: str = "./data/lstm_checkpoint.pt"
+    faiss_index_path: str = "./data/faiss.index"
+
+    sequence_length: int = 5
+    embedding_dim: int = 64
+    lstm_hidden_dim: int = 96
+    lstm_layers: int = 1
+    recommendation_top_k: int = 5
+
+    neo4j_uri: str = "neo4j://localhost:7687"
+    neo4j_user: str = "neo4j"
+    neo4j_password: str = "neo4j_password"
+    neo4j_database: str = "neo4j"
+
+    llm_provider: str = "local"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_api_version: str = "v1beta"
 
     class Config:
         env_file = ".env"

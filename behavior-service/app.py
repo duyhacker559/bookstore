@@ -419,3 +419,4 @@ async def behavior_feedback(payload: FeedbackRequest, authorization: Optional[st
 
     logger.info("behavior feedback user=%s product=%s type=%s", payload.user_id, payload.product_id, payload.feedback_type)
     return {"status": "accepted", "message": "Feedback captured"}
+
