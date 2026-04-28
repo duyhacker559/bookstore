@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from store.models.book.book import Book
+from store.models.product.product import Book
 from store.models.cart.cart import Cart, CartItem
 
 @login_required(login_url='/login/')

@@ -15,6 +15,42 @@
     padding: 40px 20px;
 }
 
+.detail-container.detail-clothing .book-cover-main {
+    background: linear-gradient(135deg, #059669 0%, #065f46 100%);
+    box-shadow: 0 10px 30px rgba(5, 150, 105, 0.3);
+}
+
+.detail-container.detail-clothing .book-category-badge {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.detail-container.detail-clothing .price-stock-section {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid #86efac;
+}
+
+.detail-container.detail-clothing .price-value,
+.detail-container.detail-clothing .book-author-link,
+.detail-container.detail-clothing .breadcrumb a,
+.detail-container.detail-clothing .back-link:hover {
+    color: #047857;
+}
+
+.detail-container.detail-clothing .btn-add-cart {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.28);
+}
+
+.detail-container.detail-clothing .btn-add-cart:hover {
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+}
+
+.detail-container.detail-clothing .feature-icon {
+    background: #d1fae5;
+    color: #047857;
+}
+
 /* Breadcrumb */
 .breadcrumb {
     display: flex;
@@ -588,12 +624,12 @@
 }
 </style>
 
-<div class="detail-container">
+<div class="detail-container {% if is_clothing_detail %}detail-clothing{% endif %}">
     <!-- Breadcrumb -->
     <nav class="breadcrumb">
         <a href="/">Home</a>
         <span class="breadcrumb-separator">›</span>
-        <a href="{% if book.primary_category %}/books/?cat={{ book.primary_category|urlencode }}{% else %}/books/{% endif %}">{{ book.primary_category|default:"Books" }}</a>
+        <a href="{% if is_clothing_detail %}/clothing/{% else %}/books/{% endif %}{% if book.primary_category %}?cat={{ book.primary_category|urlencode }}{% endif %}">{{ book.primary_category|default:"Catalog" }}</a>
         <span class="breadcrumb-separator">›</span>
         <span>{{ book.title|truncatechars:50 }}</span>
     </nav>
@@ -607,7 +643,7 @@
                     {% if book.cover_image %}
                     <img src="{{ book.cover_image }}" alt="{{ book.title }} cover">
                     {% else %}
-                    <span class="emoji">📚</span>
+                    <span class="emoji">{% if is_clothing_detail %}👕{% else %}📚{% endif %}</span>
                     {% endif %}
                 </div>
                 
@@ -625,11 +661,11 @@
             <!-- Category Badge -->
             <span class="book-category-badge">{{ book.categories_display|default:"General" }}</span>
             
-            <!-- Title & Author -->
+            <!-- Title & Creator -->
             <h1 class="book-title">{{ book.title }}</h1>
             <div class="book-author">
-                <span>by</span>
-                <a href="/?author={{ book.author }}" class="book-author-link">{{ book.author }}</a>
+                <span>{{ book.creator_label }}:</span>
+                <a href="/?author={{ book.creator_display }}" class="book-author-link">{{ book.creator_display }}</a>
             </div>
 
             <!-- Rating -->
@@ -653,7 +689,7 @@
                 </a>
                 {% if user.is_authenticated %}
                 <a href="{% url 'customer_inbox' %}?book_id={{ book.id }}" style="display: inline-block; padding: 10px 16px; background: #0ea5e9; color: white; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: background 0.2s ease;">
-                    📩 Ask Staff About This Book
+                    📩 Ask Staff About This Product
                 </a>
                 {% endif %}
             </div>
@@ -665,28 +701,40 @@
                     <span>Description</span>
                 </h3>
                 <p class="description-text">
-                    {{ book.description|default:"Discover this amazing book. A compelling read that will captivate your imagination and keep you turning pages. Perfect for book lovers looking for their next great adventure." }}
+                    {{ book.description|default:"Discover this amazing product in our catalog with quality and value." }}
                 </p>
             </div>
 
-            <!-- Book Details -->
+            <!-- Product Details -->
             <div class="details-grid">
                 <div class="detail-item">
-                    <div class="detail-label">ISBN</div>
-                    <div class="detail-value">{{ book.isbn|default:"N/A" }}</div>
+                    <div class="detail-label">Type</div>
+                    <div class="detail-value" style="text-transform:capitalize;">{{ book.product_type }}</div>
                 </div>
+                {% if is_clothing_detail and book.brand %}
                 <div class="detail-item">
-                    <div class="detail-label">Pages</div>
-                    <div class="detail-value">{{ book.pages|default:"N/A" }}</div>
+                    <div class="detail-label">Brand</div>
+                    <div class="detail-value">{{ book.brand }}</div>
                 </div>
+                {% endif %}
+                {% if is_clothing_detail and book.size_options %}
                 <div class="detail-item">
-                    <div class="detail-label">Publisher</div>
-                    <div class="detail-value">{{ book.publisher|default:"N/A" }}</div>
+                    <div class="detail-label">Size Options</div>
+                    <div class="detail-value">{{ book.size_options }}</div>
                 </div>
+                {% endif %}
+                {% if is_clothing_detail and book.material %}
                 <div class="detail-item">
-                    <div class="detail-label">Language</div>
-                    <div class="detail-value">{{ book.language|default:"English" }}</div>
+                    <div class="detail-label">Material</div>
+                    <div class="detail-value">{{ book.material }}</div>
                 </div>
+                {% endif %}
+                {% if is_clothing_detail and book.gender_target %}
+                <div class="detail-item">
+                    <div class="detail-label">Target Gender</div>
+                    <div class="detail-value">{{ book.gender_target }}</div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Price & Stock -->
@@ -770,7 +818,7 @@
 
             <!-- Share Section -->
             <div class="share-section">
-                <div class="share-title">Share this book:</div>
+                <div class="share-title">Share this product:</div>
                 <div class="share-buttons">
                     <button class="share-btn" title="Share on Facebook">📘</button>
                     <button class="share-btn" title="Share on Twitter">🐦</button>

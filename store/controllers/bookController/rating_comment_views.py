@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Avg
 from django.core.exceptions import ObjectDoesNotExist
-from store.models.book.book import Book
+from store.models.product.product import Book
 from store.models.customer.customer import Customer
 from store.models.rating.rating import Rating, Comment
 from store.models.order.order_item import OrderItem
@@ -55,7 +55,7 @@ def add_rating_comment(request, book_id):
         book.review_count = review_count
         book.save()
         
-        return redirect('book_detail', book_id=book.id)
+        return redirect('detail_redirect', book_id=book.id)
     
     # GET request - show form
     existing_rating = Rating.objects.filter(customer=customer, book=book).order_by('-created_at').first()
@@ -84,11 +84,11 @@ def mark_helpful(request, comment_id):
                 'helpful_count': comment.helpful_count
             })
     
-    return redirect('book_detail', book_id=comment.book.id)
+    return redirect('detail_redirect', book_id=comment.book.id)
 
 
-def book_reviews(request, book_id):
-    """Display all reviews and ratings for a book"""
+def product_reviews(request, book_id):
+    """Display all reviews and ratings for a product"""
     book = get_object_or_404(Book, id=book_id)
     
     # Get all ratings and comments

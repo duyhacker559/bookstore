@@ -1,6 +1,6 @@
-# Bookstore Microservices Platform
+# Store Microservices Platform
 
-A full-featured e-commerce bookstore demonstrating microservices architecture with Django monolith, FastAPI services, event-driven communication via RabbitMQ, and multi-database persistence.
+A full-featured e-commerce store demonstrating microservices architecture with a Django storefront, FastAPI services, event-driven communication via RabbitMQ, and multi-database persistence.
 
 ## 🏗️ Architecture Overview
 
@@ -11,10 +11,10 @@ A full-featured e-commerce bookstore demonstrating microservices architecture wi
        │ HTTP
        ▼
 ┌─────────────────────────────────────────────────┐
-│         Django Monolith (Port 8000)             │
+│       Django Storefront (Port 8000)             │
 │  • Web UI & Authentication                      │
 │  • Order Orchestration                          │
-│  • Book Catalog Management                      │
+│  • Unified Product Catalog                      │
 └─────┬─────────────┬──────────────┬──────────────┘
       │ REST        │ REST         │ Events
       ▼             ▼              ▼
@@ -39,13 +39,13 @@ A full-featured e-commerce bookstore demonstrating microservices architecture wi
 
 ## 📦 Services
 
-### Django Monolith (Port 8000)
-- **Purpose:** Web application, user authentication, order orchestration, book catalog
+### Django Storefront (Port 8000)
+- **Purpose:** Web application, user authentication, order orchestration, unified product catalog
 - **Technology:** Django 5.2.10, PostgreSQL
 - **Database:** `bookstore`
 - **Key Features:**
   - Customer & staff authentication
-  - Book browsing and search
+  - Product browsing and search
   - Shopping cart
   - Order management
   - Staff shipment management UI
@@ -117,6 +117,7 @@ curl http://localhost:8000/health  # Monolith
 curl http://localhost:5000/health  # Payment Service
 curl http://localhost:5001/health  # Shipping Service
 curl http://localhost:5002/health  # Notification Service
+curl http://localhost:5006/health  # AI Behavior Service
 ```
 
 ### 3. Access the Application
@@ -130,6 +131,9 @@ curl http://localhost:5002/health  # Notification Service
 ```bash
 # Populate books
 docker compose exec web python manage.py populate_books
+
+# Populate mixed catalog (books + apparel)
+docker compose exec web python manage.py populate_books --include-clothing
 
 # Create superuser
 docker compose exec web python manage.py createsuperuser
@@ -345,6 +349,26 @@ Body: {
 }
 ```
 
+### AI Advanced Gateway API (via Django Monolith)
+
+```bash
+# Ingest behavior event(s)
+POST /api/ai/advanced/events/
+
+# Train AI behavior model
+POST /api/ai/advanced/train/
+
+# Advanced recommendation
+POST /api/ai/advanced/recommend/
+
+# Advanced chatbot
+POST /api/ai/advanced/chat/
+
+# Trends and alerts
+GET /api/ai/advanced/trends/
+GET /api/ai/advanced/alerts/
+```
+
 ## 🎯 Use Cases
 
 ### Customer Journey
@@ -402,6 +426,105 @@ docker compose exec postgres psql -U bookstore -d bookstore -c "SELECT schemanam
 ```
 
 ## 🐛 Troubleshooting
+
+## 🔁 Migrate Django DB from SQLite to MySQL
+
+Use this when you want to move monolith data from `db.sqlite3` to MySQL.
+
+1. Install/update dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Create MySQL database and user (example):
+
+```sql
+CREATE DATABASE store CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'store'@'%' IDENTIFIED BY 'store_password';
+GRANT ALL PRIVILEGES ON store.* TO 'store'@'%';
+FLUSH PRIVILEGES;
+```
+
+3. Export data from current SQLite:
+
+```bash
+python manage.py dumpdata \
+  --natural-foreign --natural-primary \
+  --exclude contenttypes --exclude auth.permission \
+  > sqlite_export.json
+```
+
+4. Switch Django to MySQL via environment variables:
+
+```bash
+# PowerShell
+$env:DJANGO_DB_ENGINE="mysql"
+$env:MYSQL_HOST="127.0.0.1"
+$env:MYSQL_PORT="3306"
+$env:MYSQL_DATABASE="store"
+$env:MYSQL_USER="store"
+$env:MYSQL_PASSWORD="store_password"
+```
+
+5. Apply schema on MySQL and import data:
+
+```bash
+python manage.py migrate
+python manage.py loaddata sqlite_export.json
+```
+
+6. Verify:
+
+```bash
+python manage.py check
+python manage.py runserver
+```
+
+Notes:
+- Existing microservices keep using their own databases unchanged.
+- Keep a backup copy of `db.sqlite3` before importing.
+- For Docker, put the same vars into `.env` and restart `web`.
+
+### One-command migration script (PowerShell)
+
+You can run the migration with one command:
+
+```powershell
+./tools/migrate_sqlite_to_mysql.ps1 \
+  -MySqlHost 127.0.0.1 \
+  -MySqlPort 3306 \
+  -MySqlDatabase store \
+  -MySqlUser store \
+  -MySqlPassword store_password
+```
+
+### Run Django with MySQL in Docker Compose
+
+1. Set in `.env`:
+
+```env
+DJANGO_DB_ENGINE=mysql
+MYSQL_HOST=mysql
+MYSQL_PORT=3306
+MYSQL_DATABASE=store
+MYSQL_USER=store
+MYSQL_PASSWORD=store_password
+MYSQL_ROOT_PASSWORD=store_root_password
+```
+
+2. Start stack:
+
+```bash
+docker compose up -d --build
+```
+
+3. Run migrate/import inside web container:
+
+```bash
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py loaddata sqlite_export.json
+```
 
 ### Services Won't Start
 ```bash

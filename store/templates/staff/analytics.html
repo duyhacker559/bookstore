@@ -73,6 +73,19 @@ a.see-link:hover{text-decoration:underline;}
 .delta-up{color:#16a34a;}
 .delta-down{color:#dc2626;}
 .delta-neutral{color:#94a3b8;}
+.ops-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;padding:16px 20px 8px;}
+.ops-chip{border:1px solid #e2e8f0;background:#f8fafc;border-radius:10px;padding:10px 12px;}
+.ops-chip .k{font-size:.74rem;color:#64748b;text-transform:uppercase;letter-spacing:.03em;font-weight:700;}
+.ops-chip .v{font-size:1.1rem;color:#0f172a;font-weight:700;margin-top:2px;}
+.progress-list{padding:4px 20px 18px;display:grid;gap:10px;}
+.progress-item .name{display:flex;justify-content:space-between;font-size:.84rem;color:#334155;margin-bottom:6px;}
+.progress-track{height:9px;border-radius:999px;background:#e2e8f0;overflow:hidden;}
+.progress-fill{height:100%;border-radius:999px;}
+.bg-good{background:linear-gradient(90deg,#16a34a,#22c55e);}
+.bg-warn{background:linear-gradient(90deg,#d97706,#f59e0b);}
+.bg-info{background:linear-gradient(90deg,#2563eb,#3b82f6);}
+.top-rated-link{color:#0f172a;text-decoration:none;font-weight:600;}
+.top-rated-link:hover{color:#2563eb;}
 @media(max-width:900px){.staff-wrap{flex-direction:column;padding:16px;}.staff-sidebar{width:100%;flex:1 1 auto;position:static;padding:10px 12px;}.staff-sidebar nav{display:flex;overflow-x:auto;padding:8px 0 0;}.staff-sidebar nav a{white-space:nowrap;padding:10px 14px;}.staff-sidebar .brand{padding:8px 6px 12px;}.staff-sidebar nav .nav-section{display:none;}.staff-main{padding:0;}.two-col{grid-template-columns:1fr;}}
 </style>
 
@@ -82,7 +95,9 @@ a.see-link:hover{text-decoration:underline;}
     <nav>
       <a href="{% url 'staff_home' %}">🏠 Dashboard</a>
       <div class="nav-section">Catalogue</div>
-      <a href="{% url 'staff_books' %}">📚 Books</a>
+      <a href="{% url 'staff_books' %}">📦 All Products</a>
+      <a href="{% url 'staff_books' %}?product_type=book">📚 Books</a>
+      <a href="{% url 'staff_books' %}?product_type=clothing">👕 Clothing</a>
       <div class="nav-section">Orders</div>
       <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
       <div class="nav-section">Community</div>
@@ -123,8 +138,11 @@ a.see-link:hover{text-decoration:underline;}
         <button class="btn btn-export" type="button" data-export-chart="dailyChart">PNG Daily</button>
         <button class="btn btn-export" type="button" data-export-chart="monthlyChart">PNG Monthly</button>
         <button class="btn btn-export" type="button" data-export-chart="statusChart">PNG Status</button>
+        <button class="btn btn-export" type="button" data-export-chart="weekdayChart">PNG Weekday</button>
+        <button class="btn btn-export" type="button" data-export-chart="ratingChart">PNG Ratings</button>
         <button class="btn btn-export" type="button" id="exportTopBooksCsv">CSV Top Books</button>
         <button class="btn btn-export" type="button" id="exportTopCustomersCsv">CSV Top Customers</button>
+        <button class="btn btn-export" type="button" id="exportTopRatedCsv">CSV Top Rated</button>
       </div>
     </div>
 
@@ -164,7 +182,7 @@ a.see-link:hover{text-decoration:underline;}
         {% endif %}
       </div>
       <div class="kpi">
-        <div class="label">Books in Catalogue</div>
+        <div class="label">Products in Catalogue</div>
         <div class="value" style="color:#0891b2;">{{ total_books }}</div>
       </div>
       <div class="kpi">
@@ -177,7 +195,59 @@ a.see-link:hover{text-decoration:underline;}
         <div class="value" style="color:#1e40af;">{{ inbox_unread_count }}</div>
         <div class="sub">read: {{ inbox_read_count }}</div>
       </div>
+      <div class="kpi">
+        <div class="label">Inbox New Threads ({{ range_label }})</div>
+        <div class="value" style="color:#0ea5e9;">{{ inbox_new_count }}</div>
+        <div class="sub">awaiting staff: {{ inbox_unread_period }}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">First Response SLA</div>
+        <div class="value" style="color:#0f766e;">{{ first_response_p50|floatformat:1 }}m</div>
+        <div class="sub">P95: {{ first_response_p95|floatformat:1 }}m</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Clothing Mix</div>
+        <div class="value" style="color:#0891b2;">{{ clothing_mix_pct|floatformat:1 }}%</div>
+        <div class="sub">books: {{ total_book_products }} • clothing: {{ total_clothing_products }}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Out of Stock</div>
+        <div class="value" style="color:#dc2626;">{{ out_of_stock_count }}</div>
+        <div class="sub">{{ out_of_stock_pct|floatformat:1 }}% of catalog</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Units Sold ({{ range_label }})</div>
+        <div class="value" style="color:#1d4ed8;">{{ period_units_sold }}</div>
+        <div class="sub">{{ avg_items_per_order|floatformat:2 }} items / order</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Fulfillment Completion</div>
+        <div class="value" style="color:#047857;">{{ fulfillment_completion_rate|floatformat:1 }}%</div>
+        <div class="sub">{{ fulfillment_completed_count }} shipped or delivered</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Exception Orders</div>
+        <div class="value" style="color:#b91c1c;">{{ exception_order_rate|floatformat:1 }}%</div>
+        <div class="sub">{{ exception_order_count }} failed/cancelled</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Customer Retention</div>
+        <div class="value" style="color:#7c3aed;">{{ repeat_customer_rate|floatformat:1 }}%</div>
+        <div class="sub">repeat buyers: {{ repeat_customer_count }}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Average Rating ({{ range_label }})</div>
+        <div class="value" style="color:#ca8a04;">{{ avg_rating_period|floatformat:2 }}</div>
+        <div class="sub">{{ ratings_period_count }} ratings • {{ comments_period_count }} comments</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Operational Traffic (Proxy)</div>
+        <div class="value" style="color:#7c3aed;">{{ operational_traffic_score }}</div>
+        <div class="sub">orders + inbox + replies + catalog updates</div>
+      </div>
     </div>
+
+    <div style="margin:-8px 0 20px;color:#64748b;font-size:.82rem;">Traffic metrics here are operational proxies because page-view tracking is not yet instrumented.</div>
 
     <!-- Row 1: Daily trend + Status doughnut -->
     <div class="two-col">
@@ -189,6 +259,48 @@ a.see-link:hover{text-decoration:underline;}
         <div class="card-header">🗂 Orders by Status</div>
         <div class="chart-container" style="display:flex;justify-content:center;align-items:center;">
           <canvas id="statusChart" height="210" style="max-width:260px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Product mix + Inbox funnel -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">🧵 Product Mix (Books vs Clothing)</div>
+        <div class="chart-container" style="display:flex;justify-content:center;align-items:center;">
+          <canvas id="productMixChart" height="220" style="max-width:270px;"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">📥 Inbox Funnel ({{ range_label }})</div>
+        <div class="chart-container"><canvas id="inboxFunnelChart" height="220"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 5: Weekday performance + Rating distribution -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">📆 Weekday Order Pattern</div>
+        <div class="chart-container"><canvas id="weekdayChart" height="210"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">⭐ Rating Distribution</div>
+        <div class="chart-container"><canvas id="ratingChart" height="210"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 6: Customer mix + Stock health -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">👥 Customer Mix (New vs Returning)</div>
+        <div class="chart-container" style="display:flex;justify-content:center;align-items:center;">
+          <canvas id="customerMixChart" height="220" style="max-width:270px;"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">📦 Stock Health Distribution</div>
+        <div class="chart-container" style="display:flex;justify-content:center;align-items:center;">
+          <canvas id="stockHealthChart" height="220" style="max-width:270px;"></canvas>
         </div>
       </div>
     </div>
@@ -205,21 +317,47 @@ a.see-link:hover{text-decoration:underline;}
       </div>
     </div>
 
+    <div class="card">
+      <div class="card-header">🧭 Operational Snapshot</div>
+      <div class="ops-metrics">
+        <div class="ops-chip"><div class="k">Reply coverage</div><div class="v">{{ inbox_reply_coverage_pct|floatformat:1 }}%</div></div>
+        <div class="ops-chip"><div class="k">Customer/Staff reply ratio</div><div class="v">{{ customer_staff_reply_ratio|floatformat:2 }}</div></div>
+        <div class="ops-chip"><div class="k">Verified comment ratio</div><div class="v">{{ verified_comment_rate|floatformat:1 }}%</div></div>
+        <div class="ops-chip"><div class="k">Low stock ratio</div><div class="v">{{ low_stock_pct|floatformat:1 }}%</div></div>
+        <div class="ops-chip"><div class="k">New customers</div><div class="v">{{ new_customer_count }}</div></div>
+        <div class="ops-chip"><div class="k">Returning customers</div><div class="v">{{ returning_customer_count }}</div></div>
+      </div>
+      <div class="progress-list">
+        <div class="progress-item">
+          <div class="name"><span>Fulfillment completion</span><span>{{ fulfillment_completion_rate|floatformat:1 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill bg-good" data-width="{{ fulfillment_completion_rate|floatformat:1 }}"></div></div>
+        </div>
+        <div class="progress-item">
+          <div class="name"><span>Inbox coverage</span><span>{{ inbox_reply_coverage_pct|floatformat:1 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill bg-info" data-width="{{ inbox_reply_coverage_pct|floatformat:1 }}"></div></div>
+        </div>
+        <div class="progress-item">
+          <div class="name"><span>Exception order rate</span><span>{{ exception_order_rate|floatformat:1 }}%</span></div>
+          <div class="progress-track"><div class="progress-fill bg-warn" data-width="{{ exception_order_rate|floatformat:1 }}"></div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 3: Top books bar + Low stock -->
     <div class="two-col">
       <div class="card">
-        <div class="card-header">🏆 Top Selling Books — units sold</div>
+        <div class="card-header">🏆 Top Selling Products — units sold</div>
         <div class="chart-container"><canvas id="topBooksChart" height="260"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-header">⚠ Low Stock Books (≤ 5)</div>
+        <div class="card-header">⚠ Low Stock Products (≤ 5)</div>
         {% for b in low_stock_books %}
           <div class="low-stock-item">
             <span>{{ b.title }}</span>
             <span style="font-weight:700;color:#dc2626;">{{ b.stock }} left</span>
           </div>
         {% empty %}
-          <p style="text-align:center;padding:24px;color:#64748b;margin:0;">All books are well-stocked! 🎉</p>
+          <p style="text-align:center;padding:24px;color:#64748b;margin:0;">All products are well-stocked! 🎉</p>
         {% endfor %}
         {% if low_stock_books %}
         <div style="padding:12px 20px;border-top:1px solid #f1f5f9;text-align:right;">
@@ -246,6 +384,29 @@ a.see-link:hover{text-decoration:underline;}
           </tr>
           {% empty %}
           <tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;">No customer data yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">🏅 Top Rated Products (min 2 ratings in period)</div>
+      <table id="top-rated-table">
+        <thead>
+          <tr><th>#</th><th>Product</th><th>Avg Score</th><th>Ratings</th></tr>
+        </thead>
+        <tbody>
+          {% for r in top_rated_products %}
+          <tr>
+            <td style="color:#94a3b8;font-size:.82rem;">{{ forloop.counter }}</td>
+            <td>
+              <a class="top-rated-link" href="{% url 'detail' product_type=r.book__product_type|default:'book' book_id=r.book__id %}">{{ r.book__title }}</a>
+            </td>
+            <td style="color:#ca8a04;font-weight:700;">{{ r.avg_score|floatformat:2 }} ★</td>
+            <td>{{ r.rating_count }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;">Not enough rating data for this period.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -284,6 +445,12 @@ document.addEventListener('DOMContentLoaded', function () {
   Chart.defaults.font.family = "'Inter','Segoe UI',system-ui,sans-serif";
   Chart.defaults.color = '#64748b';
 
+  document.querySelectorAll('.progress-fill[data-width]').forEach(function (el) {
+    const raw = parseFloat(el.getAttribute('data-width') || '0');
+    const bounded = Math.max(0, Math.min(raw, 100));
+    el.style.width = bounded + '%';
+  });
+
   // ── Data from Django ────────────────────────────────────────────────────
   const chartData = JSON.parse(document.getElementById('analytics-chart-data').textContent || '{}');
   const daily = chartData.daily || [];
@@ -292,6 +459,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const categories = chartData.categories || [];
   const topBooks = chartData.top_books || [];
   const topCustomers = chartData.top_customers || [];
+  const productMix = chartData.product_mix || [];
+  const inboxFunnel = chartData.inbox_funnel || [];
+  const weekday = chartData.weekday || [];
+  const ratingDistribution = chartData.rating_distribution || [];
+  const customerMix = chartData.customer_mix || [];
+  const stockHealth = chartData.stock_health || [];
+  const statusFlow = chartData.status_flow || [];
+  const topRatedRows = Array.from(document.querySelectorAll('#top-rated-table tbody tr'));
   const chartInstances = {};
 
   function registerChart(id, chart) {
@@ -337,6 +512,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const bookLabels = topBooks.map(b => b.label);
   const bookUnits = topBooks.map(b => b.units);
+  const productMixLabels = productMix.map(p => p.label);
+  const productMixCounts = productMix.map(p => p.count);
+  const inboxFunnelLabels = inboxFunnel.map(f => f.label);
+  const inboxFunnelCounts = inboxFunnel.map(f => f.count);
+  const weekdayLabels = weekday.map(w => w.label);
+  const weekdayOrders = weekday.map(w => w.orders);
+  const ratingLabels = ratingDistribution.map(r => r.label);
+  const ratingCounts = ratingDistribution.map(r => r.count);
+  const customerMixLabels = customerMix.map(c => c.label);
+  const customerMixCounts = customerMix.map(c => c.count);
+  const stockHealthLabels = stockHealth.map(s => s.label);
+  const stockHealthCounts = stockHealth.map(s => s.count);
+  const flowLabels = statusFlow.map(s => s.label);
+  const flowCounts = statusFlow.map(s => s.count);
 
   const palette = ['#3b82f6','#6366f1','#8b5cf6','#ec4899','#f43f5e','#f97316','#eab308','#22c55e','#14b8a6','#06b6d4'];
 
@@ -478,6 +667,170 @@ document.addEventListener('DOMContentLoaded', function () {
     booksCtx.remove();
   }
 
+  // ── 6. Product Mix (doughnut) ────────────────────────────────────────
+  const productMixCtx = document.getElementById('productMixChart');
+  if (productMixCtx && productMixLabels.length) {
+    const chart = new Chart(productMixCtx, {
+      type: 'doughnut',
+      data: {
+        labels: productMixLabels,
+        datasets: [{
+          data: productMixCounts,
+          backgroundColor: ['#3b82f6', '#10b981'],
+          borderColor: '#fff',
+          borderWidth: 2,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {position: 'bottom'},
+          tooltip: {callbacks: {label: ctx => ' ' + ctx.label + ': ' + ctx.parsed}},
+        },
+        cutout: '58%'
+      }
+    });
+    registerChart('productMixChart', chart);
+  }
+
+  // ── 7. Inbox Funnel (bar) ────────────────────────────────────────────
+  const inboxFunnelCtx = document.getElementById('inboxFunnelChart');
+  if (inboxFunnelCtx && inboxFunnelLabels.length) {
+    const chart = new Chart(inboxFunnelCtx, {
+      type: 'bar',
+      data: {
+        labels: inboxFunnelLabels,
+        datasets: [{
+          label: 'Threads',
+          data: inboxFunnelCounts,
+          backgroundColor: ['#0ea5e9', '#16a34a', '#f59e0b'],
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {legend: {display: false}},
+        scales: {
+          y: {beginAtZero: true, ticks: {precision: 0}, grid: {color: '#f1f5f9'}},
+          x: {grid: {display: false}}
+        }
+      }
+    });
+    registerChart('inboxFunnelChart', chart);
+  }
+
+  // ── 8. Weekday Pattern (line) ────────────────────────────────────────
+  const weekdayCtx = document.getElementById('weekdayChart');
+  if (weekdayCtx && weekdayLabels.length) {
+    const chart = new Chart(weekdayCtx, {
+      type: 'line',
+      data: {
+        labels: weekdayLabels,
+        datasets: [{
+          label: 'Orders',
+          data: weekdayOrders,
+          borderColor: '#0ea5e9',
+          backgroundColor: 'rgba(14,165,233,.15)',
+          pointBackgroundColor: '#0284c7',
+          pointRadius: 4,
+          borderWidth: 2,
+          tension: 0.35,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: {display: false} },
+        scales: {
+          y: {beginAtZero: true, ticks: {precision: 0}, grid: {color: '#f1f5f9'}},
+          x: {grid: {display: false}}
+        }
+      }
+    });
+    registerChart('weekdayChart', chart);
+  }
+
+  // ── 9. Rating Distribution (bar) ─────────────────────────────────────
+  const ratingCtx = document.getElementById('ratingChart');
+  if (ratingCtx && ratingLabels.length) {
+    const chart = new Chart(ratingCtx, {
+      type: 'bar',
+      data: {
+        labels: ratingLabels,
+        datasets: [{
+          label: 'Ratings',
+          data: ratingCounts,
+          backgroundColor: ['#f59e0b', '#fbbf24', '#fde68a', '#93c5fd', '#60a5fa'],
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: {display: false} },
+        scales: {
+          y: {beginAtZero: true, ticks: {precision: 0}, grid: {color: '#f1f5f9'}},
+          x: {grid: {display: false}}
+        }
+      }
+    });
+    registerChart('ratingChart', chart);
+  }
+
+  // ── 10. Customer Mix (doughnut) ──────────────────────────────────────
+  const customerMixCtx = document.getElementById('customerMixChart');
+  if (customerMixCtx && customerMixLabels.length) {
+    const chart = new Chart(customerMixCtx, {
+      type: 'doughnut',
+      data: {
+        labels: customerMixLabels,
+        datasets: [{
+          data: customerMixCounts,
+          backgroundColor: ['#06b6d4', '#8b5cf6'],
+          borderColor: '#fff',
+          borderWidth: 2,
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {position: 'bottom'},
+          tooltip: {callbacks: {label: ctx => ' ' + ctx.label + ': ' + ctx.parsed}},
+        },
+        cutout: '58%'
+      }
+    });
+    registerChart('customerMixChart', chart);
+  }
+
+  // ── 11. Stock Health (pie) ───────────────────────────────────────────
+  const stockHealthCtx = document.getElementById('stockHealthChart');
+  if (stockHealthCtx && stockHealthLabels.length) {
+    const chart = new Chart(stockHealthCtx, {
+      type: 'pie',
+      data: {
+        labels: stockHealthLabels,
+        datasets: [{
+          data: stockHealthCounts,
+          backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+          borderColor: '#fff',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {position: 'bottom'},
+          tooltip: {callbacks: {label: ctx => ' ' + ctx.label + ': ' + ctx.parsed}},
+        }
+      }
+    });
+    registerChart('stockHealthChart', chart);
+  }
+
   document.querySelectorAll('[data-export-chart]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       downloadChartPng(this.getAttribute('data-export-chart'));
@@ -503,6 +856,23 @@ document.addEventListener('DOMContentLoaded', function () {
         rows.push([c.name, c.orders, (c.spent || 0).toFixed(2)]);
       });
       exportCsv('top_customers.csv', rows);
+    });
+  }
+
+  const topRatedCsvBtn = document.getElementById('exportTopRatedCsv');
+  if (topRatedCsvBtn) {
+    topRatedCsvBtn.addEventListener('click', function () {
+      const rows = [['Product', 'Avg Score', 'Ratings']];
+      topRatedRows.forEach(function (tr) {
+        const cells = tr.querySelectorAll('td');
+        if (cells.length < 4) return;
+        rows.push([
+          cells[1].innerText.trim(),
+          cells[2].innerText.replace('★', '').trim(),
+          cells[3].innerText.trim(),
+        ]);
+      });
+      exportCsv('top_rated_products.csv', rows);
     });
   }
 });

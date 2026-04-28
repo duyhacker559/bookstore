@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 06. Payment Service Architecture
+' Store Microservices – 06. Payment Service Architecture
 ' Render: plantuml 06_pay_service.puml  →  06_pay_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 06. Payment Service (pay-service) Architecture

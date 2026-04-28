@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 04. Cart Service Architecture
+' Store Microservices – 04. Cart Service Architecture
 ' Render: plantuml 04_cart_service.puml  →  04_cart_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 04. Cart Service Architecture
@@ -30,16 +30,16 @@ package "cart-service  :8006" {
     component "CartItemCreateView\nPOST /cart-items/" as item_view
 
     component "Cart Model\n──────────────\nid         : AutoField\ncustomer_id: IntegerField" as cart_model
-    component "CartItem Model\n──────────────\nid      : AutoField\ncart    : ForeignKey(Cart)\nbook_id : IntegerField\nquantity: IntegerField" as item_model
+    component "CartItem Model\n──────────────\nid       : AutoField\ncart     : ForeignKey(Cart)\nproduct_id : IntegerField\nquantity : IntegerField" as item_model
   }
 
-  component "Book Validation\nrequests.get(\n  book-service/books/\n)" as book_check
+  component "Product Validation\nrequests.get(\n  product-service/products/\n)" as product_check
 }
 
 database "cart-db\n(SQLite / PostgreSQL)" as db
 
-package "book-service  :8005" {
-  component "GET /books/" as book_ep
+package "product-service  :8005" {
+  component "GET /products/" as product_ep
 }
 
 ' ── Flows ─────────────────────────────────────────────────────────────────────
@@ -57,17 +57,17 @@ cart_model  --> db          : INSERT cart
 cart_detail --> cart_model  : query cart + items
 cart_detail --> item_model  : SELECT items WHERE cart_id
 
-item_view   --> book_check  : validate book_id
-book_check  --> book_ep     : GET /books/
-book_ep     --> book_check  : 200 [books list]
-book_check  --> item_view   : valid / 404 not found
+item_view   --> product_check  : validate product_id
+product_check  --> product_ep  : GET /products/
+product_ep     --> product_check  : 200 [products list]
+product_check  --> item_view   : valid / 404 not found
 item_view   --> item_model  : save() if valid
 item_model  --> db          : INSERT cart_item
 
-note right of book_check
+note right of product_check
   Returns HTTP 404 to caller
-  if book_id is not found in
-  book-service response.
+  if product_id is not found in
+  product-service response.
 end note
 
 @enduml

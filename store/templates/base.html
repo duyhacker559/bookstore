@@ -5,8 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="BookStore - Your one-stop destination for all kinds of books">
-    <title>{% block title %}BookStore - Discover Your Next Great Read{% endblock %}</title>
+    <meta name="description" content="BookStore - Your one-stop destination for books, apparel, and more">
+    <title>{% block title %}BookStore - Discover Your Next Great Product{% endblock %}</title>
     
     <style>
         /* ============================================
@@ -266,6 +266,10 @@
             white-space: nowrap;
             border-radius: 10px;
             border: 1px solid transparent;
+        }
+
+        .mobile-only-link {
+            display: none;
         }
 
         .nav-links a::after {
@@ -698,6 +702,10 @@
                 border-radius: 12px;
             }
 
+            .mobile-only-link {
+                display: block;
+            }
+
             .nav-links a::after {
                 display: none;
             }
@@ -778,6 +786,173 @@
             border: 1px solid var(--border);
         }
 
+        .ai-chat-launcher {
+            position: fixed;
+            right: 20px;
+            bottom: 24px;
+            width: 56px;
+            height: 56px;
+            border: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.35);
+            z-index: 1200;
+        }
+
+        .ai-chat-panel {
+            position: fixed;
+            right: 20px;
+            bottom: 92px;
+            width: min(360px, calc(100vw - 32px));
+            height: min(520px, calc(100vh - 160px));
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-xl);
+            display: none;
+            flex-direction: column;
+            z-index: 1200;
+            overflow: hidden;
+        }
+
+        .ai-chat-panel.active {
+            display: flex;
+        }
+
+        .ai-chat-header {
+            padding: 12px 14px;
+            color: #fff;
+            background: linear-gradient(120deg, #1e3a8a 0%, #1d4ed8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .ai-chat-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .ai-chat-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .ai-chat-close {
+            border: 0;
+            color: #fff;
+            background: transparent;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .ai-chat-actions {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            background: #f8fafc;
+        }
+
+        .ai-chat-action-btn {
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            background: #fff;
+            color: #0f172a;
+        }
+
+        .ai-chat-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background: #fff;
+        }
+
+        .ai-msg {
+            margin-bottom: 10px;
+            max-width: 90%;
+            padding: 9px 11px;
+            border-radius: 10px;
+            line-height: 1.4;
+            font-size: 0.87rem;
+            white-space: pre-wrap;
+        }
+
+        .ai-msg.user {
+            margin-left: auto;
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .ai-msg.bot {
+            margin-right: auto;
+            background: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+        }
+
+        .ai-chat-input-wrap {
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: #fff;
+        }
+
+        .ai-chat-input {
+            flex: 1;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 9px 10px;
+            font-size: 0.86rem;
+        }
+
+        .ai-chat-send {
+            border: 0;
+            border-radius: 10px;
+            padding: 0 14px;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .ai-product-list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ai-product-item {
+            padding: 8px;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+            background: #f8fbff;
+        }
+
+        .ai-product-item a {
+            font-weight: 600;
+            color: #1e40af;
+            text-decoration: none;
+        }
+
+        .ai-product-meta {
+            font-size: 0.77rem;
+            color: #334155;
+            margin-top: 2px;
+        }
+
         /* ============================================
            EXTRA STYLES BLOCK
            ============================================ */
@@ -789,30 +964,26 @@
     <!-- Header & Navigation -->
     <header>
         <nav>
-            <a href="{% url 'book_list' %}" class="logo">
+            <a href="{% url 'home' %}" class="logo">
                 <span class="logo-icon">📖</span>
                 <span class="logo-copy">
-                    <span>BookStore</span>
-                    <small>Modern online bookstore</small>
+                    <span>Store</span>
+                    <small>Modern multi-category marketplace</small>
                 </span>
             </a>
 
-            <form action="{% url 'book_catalog' %}" method="get" class="search-container-base">
+            <form action="{% url 'catalog' %}" method="get" class="search-container-base">
                 <input type="text" 
                        name="q" 
                        value="{{ q|default:'' }}" 
                        class="search-input"
-                       placeholder="Search books, authors, ISBNs..."
+                       placeholder="Search products, creators, brands, categories..."
                        autocomplete="off">
                 <span class="search-hint">Search</span>
                 <button type="submit" class="search-btn">🔍</button>
             </form>
 
             <div class="nav-utility">
-                <a href="/recommendations/" class="nav-chip" title="Recommendations" aria-label="Recommendations">
-                    <span class="chip-icon">⭐</span>
-                    <span class="chip-label">Recommendations</span>
-                </a>
                 {% if user.is_authenticated %}
                 <a href="{% url 'customer_notifications' %}" class="nav-chip" title="Notifications" aria-label="Notifications" style="position:relative;">
                     <span class="chip-icon">🔔</span>
@@ -836,16 +1007,16 @@
             </div>
 
             <div class="nav-links" id="navLinks">
-                <a href="{% url 'book_list' %}" class="{% if request.path == '/' %}active{% endif %}">Home</a>
-                <a href="{% url 'book_catalog' %}" class="{% if '/books/' in request.path %}active{% endif %}">Books</a>
+                <a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}">Home</a>
+                <a href="{% url 'catalog' %}" class="{% if request.resolver_match.url_name == 'catalog' %}active{% endif %}">Store</a>
                 <a href="/recommendations/" class="{% if '/recommendations/' in request.path %}active{% endif %}">Recommendations</a>
 
                 <span class="nav-divider"></span>
 
                 {% if user.is_authenticated %}
                 <a href="/customer/profile/">Account</a>
-                <a href="{% url 'customer_notifications' %}">Notifications</a>
-                <a href="{% url 'customer_inbox' %}">Inbox</a>
+                <a href="{% url 'customer_notifications' %}" class="mobile-only-link">Notifications</a>
+                <a href="{% url 'customer_inbox' %}" class="mobile-only-link">Inbox</a>
                 {% if user.is_staff %}
                 <a href="{% url 'staff_home' %}" class="{% if '/staff/' in request.path %}active{% endif %}">Staff</a>
                 {% endif %}
@@ -878,6 +1049,31 @@
         {% block content %}{% endblock %}
     </div>
 
+    {% if user.is_authenticated and not user.is_staff %}
+    <button type="button" class="ai-chat-launcher" id="aiChatLauncher" aria-label="Open AI chat">AI</button>
+    <section class="ai-chat-panel" id="aiChatPanel" aria-live="polite">
+        <div class="ai-chat-header">
+            <div>
+                <p class="ai-chat-title">AI Product Advisor</p>
+                <div class="ai-chat-subtitle">Consulting and product suggestions</div>
+            </div>
+            <button type="button" class="ai-chat-close" id="aiChatClose" aria-label="Close chat">x</button>
+        </div>
+        <div class="ai-chat-actions">
+            <button type="button" class="ai-chat-action-btn" id="aiQuickRecommend">Suggest for me</button>
+            <button type="button" class="ai-chat-action-btn" id="aiQuickBudget">Under 20 budget</button>
+            <button type="button" class="ai-chat-action-btn" id="aiQuickPython">Python starter books</button>
+        </div>
+        <div class="ai-chat-log" id="aiChatLog">
+            <div class="ai-msg bot">Hello. Ask me what you need and I will suggest suitable products.</div>
+        </div>
+        <div class="ai-chat-input-wrap">
+            <input id="aiChatInput" class="ai-chat-input" type="text" maxlength="500" placeholder="Type your question...">
+            <button type="button" class="ai-chat-send" id="aiChatSend">Send</button>
+        </div>
+    </section>
+    {% endif %}
+
     <!-- Global Footer -->
     <footer>
         <div class="footer-content">
@@ -886,9 +1082,9 @@
                 <div class="footer-col">
                     <a href="/" class="logo" style="margin-bottom:20px; display:inline-block;">
                         <span class="logo-icon">📖</span>
-                        <span>BookStore</span>
+                        <span>Store</span>
                     </a>
-                    <p>Your one-stop destination for all kinds of books. Discover, read, and grow with our extensive collection of bestsellers, classics, and hidden gems.</p>
+                    <p>Your one-stop destination for books, apparel, and more. Discover trusted products with helpful reviews and smooth checkout.</p>
                     
                     <div class="social-links">
                         <a href="#" class="social-link" title="Facebook">f</a>
@@ -902,10 +1098,10 @@
                 <div class="footer-col">
                     <h3>Quick Links</h3>
                     <ul>
-                        <li><a href="/">All Books</a></li>
-                        <li><a href="/recommendations/">Bestsellers</a></li>
-                        <li><a href="/">New Arrivals</a></li>
-                        <li><a href="/">Special Offers</a></li>
+                        <li><a href="{% url 'catalog' %}">All Products</a></li>
+                        <li><a href="{% url 'recommendations' %}">Bestsellers</a></li>
+                        <li><a href="{% url 'catalog' %}?sort=latest">New Arrivals</a></li>
+                        <li><a href="{% url 'catalog' %}?special=1">Special Offers</a></li>
                         <li><a href="/about/">About Us</a></li>
                     </ul>
                 </div>
@@ -914,11 +1110,11 @@
                 <div class="footer-col">
                     <h3>Categories</h3>
                     <ul>
-                        <li><a href="?cat=Fiction">Fiction</a></li>
-                        <li><a href="?cat=Non-Fiction">Non-Fiction</a></li>
-                        <li><a href="?cat=Science">Science</a></li>
-                        <li><a href="?cat=Technology">Technology</a></li>
-                        <li><a href="?cat=Biography">Biography</a></li>
+                        <li><a href="{% url 'catalog' %}?cat=Fiction">Fiction</a></li>
+                        <li><a href="{% url 'catalog' %}?cat=Non-Fiction">Non-Fiction</a></li>
+                        <li><a href="{% url 'catalog' %}?cat=Science">Science</a></li>
+                        <li><a href="{% url 'catalog' %}?cat=Technology">Technology</a></li>
+                        <li><a href="{% url 'catalog' %}?cat=Biography">Biography</a></li>
                     </ul>
                 </div>
 
@@ -944,7 +1140,7 @@
                    <a href="/privacy/">Privacy Policy</a> | 
                    <a href="/terms/">Terms of Service</a>
                 </p>
-                <p style="margin-top: 10px; color: #64748b;">Made with ❤️ for book lovers everywhere</p>
+                <p style="margin-top: 10px; color: #64748b;">Made with ❤️ for shoppers everywhere</p>
             </div>
         </div>
     </footer>
@@ -1072,6 +1268,162 @@
             }
         `;
         document.head.appendChild(style);
+
+        {% if user.is_authenticated and not user.is_staff %}
+        const aiLauncher = document.getElementById('aiChatLauncher');
+        const aiPanel = document.getElementById('aiChatPanel');
+        const aiClose = document.getElementById('aiChatClose');
+        const aiLog = document.getElementById('aiChatLog');
+        const aiInput = document.getElementById('aiChatInput');
+        const aiSend = document.getElementById('aiChatSend');
+        const aiQuickRecommend = document.getElementById('aiQuickRecommend');
+        const aiQuickBudget = document.getElementById('aiQuickBudget');
+        const aiQuickPython = document.getElementById('aiQuickPython');
+        let aiSessionId = `web-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+        function getCsrfToken() {
+            const match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        function appendAiMessage(text, sender) {
+            const bubble = document.createElement('div');
+            bubble.className = `ai-msg ${sender}`;
+            bubble.textContent = text;
+            aiLog.appendChild(bubble);
+            aiLog.scrollTop = aiLog.scrollHeight;
+        }
+
+        function appendAiRecommendations(items) {
+            if (!Array.isArray(items) || items.length === 0) {
+                return;
+            }
+
+            const bubble = document.createElement('div');
+            bubble.className = 'ai-msg bot';
+
+            const title = document.createElement('div');
+            title.textContent = 'Recommended products:';
+            bubble.appendChild(title);
+
+            const list = document.createElement('div');
+            list.className = 'ai-product-list';
+
+            items.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'ai-product-item';
+
+                const link = document.createElement('a');
+                link.href = item.detail_url || '#';
+                link.textContent = item.title || `Product #${item.id}`;
+                card.appendChild(link);
+
+                const meta = document.createElement('div');
+                meta.className = 'ai-product-meta';
+                const price = typeof item.price === 'number' ? item.price.toFixed(2) : item.price;
+                meta.textContent = `ID ${item.id} | ${item.product_type || 'product'} | $${price}`;
+                card.appendChild(meta);
+
+                list.appendChild(card);
+            });
+
+            bubble.appendChild(list);
+            aiLog.appendChild(bubble);
+            aiLog.scrollTop = aiLog.scrollHeight;
+        }
+
+        async function sendAiQuestion(question, context = {}) {
+            if (!question.trim()) {
+                return;
+            }
+
+            appendAiMessage(question.trim(), 'user');
+            aiInput.value = '';
+
+            try {
+                const response = await fetch("{% url 'customer_ai_chat' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        session_id: aiSessionId,
+                        question: question.trim(),
+                        context: context
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    appendAiMessage(data.error || 'AI service is temporarily unavailable.', 'bot');
+                    return;
+                }
+
+                let answer = data.answer || 'I need more information to answer accurately.';
+                appendAiMessage(answer, 'bot');
+                appendAiRecommendations(data.recommended_product_items || []);
+            } catch (error) {
+                appendAiMessage('Connection error. Please try again.', 'bot');
+            }
+        }
+
+        async function sendAiRecommend(topK = 3) {
+            appendAiMessage('Please suggest products for me.', 'user');
+            try {
+                const response = await fetch("{% url 'customer_ai_recommend' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ top_k: topK })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    appendAiMessage(data.error || 'Cannot get recommendations now.', 'bot');
+                    return;
+                }
+
+                const items = (data.recommendations || []).map((item) => {
+                    return `#${item.product_id} (${item.score}) - ${item.reason}`;
+                });
+
+                appendAiMessage(items.length ? `Recommended now:\n${items.join('\n')}` : 'No recommendation at this moment.', 'bot');
+                appendAiRecommendations(data.recommended_product_items || []);
+            } catch (error) {
+                appendAiMessage('Connection error. Please try again.', 'bot');
+            }
+        }
+
+        aiLauncher?.addEventListener('click', () => {
+            aiPanel.classList.toggle('active');
+            if (aiPanel.classList.contains('active')) {
+                aiInput?.focus();
+            }
+        });
+
+        aiClose?.addEventListener('click', () => {
+            aiPanel.classList.remove('active');
+        });
+
+        aiSend?.addEventListener('click', () => {
+            sendAiQuestion(aiInput.value);
+        });
+
+        aiInput?.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendAiQuestion(aiInput.value);
+            }
+        });
+
+        aiQuickRecommend?.addEventListener('click', () => sendAiRecommend(3));
+        aiQuickBudget?.addEventListener('click', () => sendAiQuestion('Suggest products under 20 budget', { budget_max: 20 }));
+        aiQuickPython?.addEventListener('click', () => sendAiQuestion('Suggest Python books for beginners', { preferred_category: 'technology' }));
+        {% endif %}
     </script>
 
     {% block extra_js %}{% endblock %}

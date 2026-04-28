@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Rate & Review "{{ book.title }}" - BookStore{% endblock %}
+{% block title %}Rate & Review "{{ book.title }}" - Product Catalog{% endblock %}
 
 {% block content %}
 <div class="container" style="padding: 40px 20px;">
     <div style="max-width: 700px; margin: 0 auto;">
         <h1 style="margin-bottom: 10px; color: #0f172a;">Rate & Review</h1>
-        <p style="color: #64748b; margin-bottom: 30px;">{{ book.title }} by {{ book.author }}</p>
+        <p style="color: #64748b; margin-bottom: 30px;">{{ book.title }} - {{ book.creator_label }}: {{ book.creator_display }}</p>
 
         <div style="background: white; padding: 30px; border-radius: 14px; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
             {% if not has_purchased %}
             <div style="background: #fff7dd; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 10px; margin-bottom: 25px; border:1px solid #fde68a;">
-                <p style="color: #92400e; margin: 0;">ℹ️ <strong>Note:</strong> You haven't purchased this book. Your review won't be marked as "Verified Purchase".</p>
+                <p style="color: #92400e; margin: 0;">ℹ️ <strong>Note:</strong> You haven't purchased this product. Your review won't be marked as "Verified Purchase".</p>
             </div>
             {% else %}
             <div style="background: #ecfdf3; border-left: 4px solid #10b981; padding: 15px; border-radius: 10px; margin-bottom: 25px; border:1px solid #bbf7d0;">
@@ -41,13 +41,13 @@
                 <!-- Review Title -->
                 <div>
                     <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Review Title</label>
-                    <input type="text" name="title" placeholder="e.g., Amazing book, highly recommended!" value="{{ existing_comment.title }}" maxlength="200" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem;">
+                    <input type="text" name="title" placeholder="e.g., Amazing quality, highly recommended!" value="{{ existing_comment.title }}" maxlength="200" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem;">
                 </div>
 
                 <!-- Review Content -->
                 <div>
                     <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600;">Your Review</label>
-                    <textarea name="content" placeholder="Share your thoughts about this book..." maxlength="2000" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem; min-height: 150px; resize: vertical;">{{ existing_comment.content }}</textarea>
+                    <textarea name="content" placeholder="Share your thoughts about this product..." maxlength="2000" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1rem; min-height: 150px; resize: vertical;">{{ existing_comment.content }}</textarea>
                     <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">Max 2000 characters</p>
                 </div>
 
@@ -56,7 +56,7 @@
                     <button type="submit" style="flex: 1; padding: 12px 24px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer;">
                         Add Review
                     </button>
-                    <a href="{% url 'book_detail' book.id %}" style="flex: 1; padding: 12px 24px; background: #334155; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; text-align: center; text-decoration: none;">Cancel</a>
+                    <a href="{% url 'detail_redirect' book.id %}" style="flex: 1; padding: 12px 24px; background: #334155; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; text-align: center; text-decoration: none;">Cancel</a>
                 </div>
             </form>
         </div>

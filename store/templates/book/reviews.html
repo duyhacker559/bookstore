@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load custom_filters %}
-{% block title %}Reviews - {{ book.title }} - BookStore{% endblock %}
+{% block title %}Reviews - {{ book.title }} - Product Catalog{% endblock %}
 
 {% block content %}
 <div class="container" style="padding: 40px 20px;">
     <div style="max-width: 900px; margin: 0 auto;">
         <h1 style="margin-bottom: 10px; color: #0f172a;">Customer Reviews</h1>
-        <p style="color: #64748b; margin-bottom: 30px;">{{ book.title }} by {{ book.author }}</p>
+        <p style="color: #64748b; margin-bottom: 30px;">{{ book.title }} - {{ book.creator_label }}: {{ book.creator_display }}</p>
 
         <div style="display: grid; grid-template-columns: 300px 1fr; gap: 30px;">
             <!-- Rating Summary -->
@@ -90,14 +90,14 @@
                     </div>
                 {% else %}
                 <div style="background: white; padding: 40px; border-radius: 14px; text-align: center; box-shadow: 0 10px 24px rgba(15,23,42,0.06); border:1px solid #dbe2f0;">
-                    <p style="color: #64748b; margin-bottom: 20px;">No reviews yet. Be the first to review this book!</p>
+                    <p style="color: #64748b; margin-bottom: 20px;">No reviews yet. Be the first to review this product!</p>
                     <a href="{% url 'add_rating_comment' book.id %}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: 700;">Write a Review</a>
                 </div>
                 {% endif %}
             </div>
         </div>
 
-        <a href="{% url 'book_detail' book.id %}" style="display: block; margin-top: 30px; padding: 12px 24px; background: #334155; color: white; border-radius: 10px; text-decoration: none; font-weight: 700; text-align: center; max-width: 220px;">← Back to Book</a>
+        <a href="{% url 'detail_redirect' book.id %}" style="display: block; margin-top: 30px; padding: 12px 24px; background: #334155; color: white; border-radius: 10px; text-decoration: none; font-weight: 700; text-align: center; max-width: 220px;">← Back to Product</a>
     </div>
 </div>
 {% endblock %}

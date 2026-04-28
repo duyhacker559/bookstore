@@ -1,9 +1,9 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – Full System Overview
+' Store Microservices – Full System Overview
 ' Render: plantuml 00_overview.puml  →  00_overview.png
 ' ─────────────────────────────────────────────────────────────────────────────
-title BookStore Microservices — Full System Overview
+title Store Microservices — Full System Overview
 left to right direction
 skinparam shadowing false
 skinparam defaultFontName Arial
@@ -34,7 +34,7 @@ package "Identity Services" {
 
 package "Catalogue Services" {
   component "catalog-service\n:8004"  as cats
-  component "book-service\n:8005"     as bs
+  component "product-service\n:8005"   as psvc
 }
 
 package "Ordering Services" {
@@ -62,7 +62,7 @@ gw --> cs    : /customers/
 gw --> ss    : /staffs/
 gw --> ms    : /managers/
 gw --> cats  : /catalogs/
-gw --> bs    : /books/
+gw --> psvc  : /products/
 gw --> carts : /cart-items/, /cart-detail/
 gw --> os    : /orders/
 gw --> ps    : /payments/
@@ -72,6 +72,6 @@ gw --> ras   : /recommendations/
 
 ' ── Inter-service calls ───────────────────────────────────────────────────────
 cs    --> carts : POST /carts/ (auto create)
-carts --> bs    : GET  /books/ (validate book_id)
+carts --> psvc  : GET  /products/ (validate product_id)
 
 @enduml

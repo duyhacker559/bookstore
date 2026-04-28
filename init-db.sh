@@ -1,6 +1,6 @@
 #!/bin/bash
 # Database initialization script for Bookstore microservices
-# This script creates the three microservice databases if they don't exist
+# This script creates the microservice databases if they don't exist
 
 set -e
 

@@ -41,5 +41,17 @@
     <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; color:#64748b;">No notifications yet.</div>
     {% endfor %}
   </div>
+
+  {% if notifications_page and notifications_page.paginator.num_pages > 1 %}
+  <div style="display:flex; justify-content:center; gap:8px; margin-top:14px;">
+    {% if notifications_page.has_previous %}
+    <a href="?page={{ notifications_page.previous_page_number }}" style="text-decoration:none; background:#fff; border:1px solid #cbd5e1; color:#334155; padding:8px 12px; border-radius:8px;">Previous</a>
+    {% endif %}
+    <span style="align-self:center; color:#64748b;">Page {{ notifications_page.number }} of {{ notifications_page.paginator.num_pages }}</span>
+    {% if notifications_page.has_next %}
+    <a href="?page={{ notifications_page.next_page_number }}" style="text-decoration:none; background:#fff; border:1px solid #cbd5e1; color:#334155; padding:8px 12px; border-radius:8px;">Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

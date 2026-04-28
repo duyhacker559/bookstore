@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 05. Order Service Architecture
+' Store Microservices – 05. Order Service Architecture
 ' Render: plantuml 05_order_service.puml  →  05_order_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 05. Order Service Architecture

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class EventPublisher:
     """Publish payment events to RabbitMQ"""
     
-    EXCHANGE = 'bookstore.events'
+    EXCHANGE = 'store.events'
     EXCHANGE_TYPE = 'topic'
     
     def __init__(self, host: str, port: int, username: str, password: str):

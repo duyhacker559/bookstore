@@ -53,7 +53,9 @@
     <nav>
       <a href="{% url 'staff_home' %}">🏠 Dashboard</a>
       <div class="nav-section">Catalogue</div>
-      <a href="{% url 'staff_books' %}">📚 Books</a>
+      <a href="{% url 'staff_books' %}">📦 All Products</a>
+      <a href="{% url 'staff_books' %}?product_type=book">📚 Books</a>
+      <a href="{% url 'staff_books' %}?product_type=clothing">👕 Clothing</a>
       <div class="nav-section">Orders</div>
       <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
       <div class="nav-section">Community</div>
@@ -97,7 +99,7 @@
       {% for m in inbox_messages %}
       <div class="row {% if m.needs_staff_action %}row-priority{% endif %}">
         <div class="meta">
-          <div>{{ m.customer.name }} {% if m.book %}• Book: {{ m.book.title }}{% endif %}</div>
+          <div>{{ m.customer.name }} {% if m.book %}• Product: {{ m.book.title }}{% endif %}</div>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">{{ m.created_at|date:"Y-m-d H:i" }} • <span class="status-pill status-{{ m.status }}">{{ m.get_status_display }}</span> • <a href="{% url 'staff_inbox_thread' m.id %}" style="color:#1e40af; text-decoration:none;">Open thread</a><button type="button" class="collapse-toggle" data-toggle-target="staff-thread-{{ m.id }}" aria-expanded="false">Expand</button></div>
         </div>
         <div id="staff-thread-{{ m.id }}" class="collapse-body is-collapsed">

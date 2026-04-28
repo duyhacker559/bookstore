@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Recommendations - BookStore{% endblock %}
+{% block title %}Recommendations - Product Catalog{% endblock %}
 
 {% block content %}
 
@@ -666,14 +666,14 @@
     <div class="recommendations-hero">
         <div class="hero-content">
             <span class="hero-badge">✨ Personalized Just for You</span>
-            <h1 class="hero-title">Smart Book Recommendations</h1>
+            <h1 class="hero-title">Smart Product Recommendations</h1>
             <p class="hero-subtitle">
-                Ranked by your best match first, then refined by rating and reader popularity.
+                Ranked by your best match first, then refined by rating and customer popularity.
             </p>
             
             <div class="hero-stats">
                 <div class="stat-item">
-                    <span class="stat-number">{{ total_recommendations|default:books|length }}</span>
+                    <span class="stat-number">{{ total_recommendations|default_if_none:0 }}</span>
                     <span class="stat-label">Recommendations</span>
                 </div>
                 <div class="stat-item">
@@ -681,7 +681,7 @@
                     <span class="stat-label">Top Match</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">4.8★</span>
+                    <span class="stat-number">{{ avg_rating_value|default:0 }}★</span>
                     <span class="stat-label">Avg Rating</span>
                 </div>
             </div>
@@ -718,7 +718,16 @@
             <div class="advanced-filters">
         <div>
           <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Search</label>
-          <input type="text" name="q" value="{{ query }}" placeholder="Title or author…" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;outline:none;">
+                    <input type="text" name="q" value="{{ query }}" placeholder="Title, creator, brand..." style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;outline:none;">
+                </div>
+                <div>
+                    <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Product Type</label>
+                    <select name="product_type" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;background:#fff;cursor:pointer;outline:none;">
+                        <option value="">All Types</option>
+                        {% for item in available_product_types %}
+                            <option value="{{ item.value }}" {% if product_type == item.value %}selected{% endif %}>{{ item.label }}</option>
+                        {% endfor %}
+                    </select>
         </div>
         <div>
           <label style="font-size:.8rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Min Price ($)</label>
@@ -760,7 +769,7 @@
     <!-- Section Header -->
     <div class="section-header">
         <h2 class="section-title">
-            <span>📚</span>
+            <span>📦</span>
             <span>Your Personalized Picks</span>
         </h2>
         <div class="view-toggle">
@@ -770,7 +779,7 @@
     </div>
     <p class="section-subtitle">Ranked by your match first, then by rating and reader popularity.</p>
 
-    <!-- Books Grid -->
+    <!-- Products Grid -->
     <div class="grid-container">
         {% for book in books %}
         <div class="card">
@@ -794,7 +803,7 @@
                 <h3 class="card-title">
                     <a href="/{{ book.id }}/">{{ book.title }}</a>
                 </h3>
-                <p class="card-author">by {{ book.author }}</p>
+                <p class="card-author">{{ book.creator_label }}: {{ book.creator_display }}</p>
 
                 <!-- Rating -->
                 <div class="card-rating">
@@ -836,9 +845,9 @@
         <div class="empty-state">
             <div class="empty-state-icon">📚</div>
             <h3>No Recommendations Yet</h3>
-            <p>Start browsing our collection to get personalized recommendations!</p>
-            <a href="/" class="btn btn-primary" style="display: inline-block; margin-top: 16px;">
-                Browse Books
+            <p>Start browsing the catalog to unlock personalized recommendations.</p>
+            <a href="{% url 'catalog' %}" class="btn btn-primary" style="display: inline-block; margin-top: 16px;">
+                Browse Catalog
             </a>
         </div>
         {% endfor %}
@@ -864,7 +873,7 @@
             </a>
             <div class="card-body">
                 <h3 class="card-title"><a href="/{{ book.id }}/">{{ book.title }}</a></h3>
-                <p class="card-author">by {{ book.author }}</p>
+                <p class="card-author">{{ book.creator_label }}: {{ book.creator_display }}</p>
                 <div class="card-rating"><span class="stars">{% if book.rating >= 1 %}★{% else %}☆{% endif %}{% if book.rating >= 2 %}★{% else %}☆{% endif %}{% if book.rating >= 3 %}★{% else %}☆{% endif %}{% if book.rating >= 4 %}★{% else %}☆{% endif %}{% if book.rating >= 5 %}★{% else %}☆{% endif %}</span><span class="rating-count">({{ book.review_count|default:"0" }})</span></div>
                 <div class="match-score"><span>✓</span><span class="match-percentage">{{ book.match_score|default:"95" }}% Match</span></div>
                 {% if book.match_reason %}<div style="padding:8px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;margin-bottom:16px;font-size:.8rem;color:#15803d;font-weight:500;">{{ book.match_reason }}</div>{% endif %}
@@ -877,17 +886,17 @@
 
     <!-- Why Recommended Section -->
     <div class="why-recommended">
-        <h2>Why These Books?</h2>
+        <h2>Why These Products?</h2>
         <div class="reasons-grid">
             <div class="reason-card">
                 <span class="reason-icon">🔥</span>
                 <h3 class="reason-title">Trending Now</h3>
-                <p class="reason-desc">Popular picks that other readers are loving right now</p>
+                <p class="reason-desc">Popular picks that other customers are loving right now</p>
             </div>
             <div class="reason-card">
                 <span class="reason-icon">⭐</span>
                 <h3 class="reason-title">Highly Rated</h3>
-                <p class="reason-desc">Books with excellent reviews from our community</p>
+                <p class="reason-desc">Products with excellent reviews from our community</p>
             </div>
             <div class="reason-card">
                 <span class="reason-icon">🎯</span>
@@ -979,13 +988,14 @@ function renderActiveFilterChips() {
     const params = new URLSearchParams(window.location.search);
     const labels = {
         q: 'Search',
+        product_type: 'Type',
         price_min: 'Min $',
         price_max: 'Max $',
         category: 'Category',
         rating_min: 'Rating',
         filter: 'Mode'
     };
-    const removableKeys = ['q', 'price_min', 'price_max', 'category', 'rating_min', 'filter'];
+    const removableKeys = ['q', 'product_type', 'price_min', 'price_max', 'category', 'rating_min', 'filter'];
     const chips = [];
 
     removableKeys.forEach(function (key) {
@@ -1048,7 +1058,7 @@ function initializeRecommendationInteractions() {
             });
         });
 
-        form.querySelectorAll('select[name="category"], select[name="rating_min"]').forEach(function (el) {
+        form.querySelectorAll('select[name="product_type"], select[name="category"], select[name="rating_min"]').forEach(function (el) {
             el.addEventListener('change', function () {
                 fetchRecommendationResults(buildParamsFromForm(form), true);
             });

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Shopping Cart - BookStore{% endblock %}
+{% block title %}Shopping Cart - Product Catalog{% endblock %}
 
 {% block content %}
 
@@ -555,7 +555,7 @@
         <div class="cart-items">
             {% for item in cart %}
             <div class="cart-item">
-                <!-- Book Cover -->
+                <!-- Product Cover -->
                 <a href="/{{ item.book.id }}/">
                     <div class="item-cover">
                         <span class="emoji">📚</span>
@@ -567,7 +567,7 @@
                     <h3 class="item-title">
                         <a href="/{{ item.book.id }}/">{{ item.book.title }}</a>
                     </h3>
-                    <p class="item-author">by {{ item.book.author }}</p>
+                    <p class="item-author">{{ item.book.creator_label }}: {{ item.book.creator_display }}</p>
                     
                     <div class="item-meta">
                         <span class="meta-item">
@@ -692,7 +692,7 @@
     <div class="empty-cart">
         <div class="empty-icon">🛒</div>
         <h2>Your cart is empty</h2>
-        <p>Looks like you haven't added any books yet. Start exploring our amazing collection!</p>
+        <p>Looks like you haven't added any products yet. Start exploring our catalog!</p>
         <a href="/" class="btn btn-primary" style="display: inline-block; padding: 14px 32px; font-size: 1.1rem;">
             <span>Start Shopping</span>
             <span>→</span>
@@ -716,7 +716,7 @@ function updateQuantity(bookId, change) {
     
     // Here you would typically make an AJAX call to update the cart
     // For now, we'll just update the display
-    console.log('Updating quantity for book ' + bookId + ' to ' + newQty);
+    console.log('Updating quantity for product ' + bookId + ' to ' + newQty);
     
     // Optional: Submit form to update cart
     // You can create a form and submit it here

@@ -16,7 +16,7 @@
     <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
       <div>
         <div style="font-weight:700; color:#0f172a;">{{ inbox_message.subject }}</div>
-        <div style="color:#64748b; margin-top:4px;">Customer: {{ inbox_message.customer.name }} {% if inbox_message.book %}• Book: {{ inbox_message.book.title }}{% endif %}</div>
+        <div style="color:#64748b; margin-top:4px;">Customer: {{ inbox_message.customer.name }} {% if inbox_message.book %}• Product: {{ inbox_message.book.title }}{% endif %}</div>
       </div>
       <div style="font-size:0.85rem; color:#64748b;">Status: {{ inbox_message.get_status_display }}</div>
     </div>

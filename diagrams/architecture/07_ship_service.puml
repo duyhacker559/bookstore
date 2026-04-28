@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 07. Shipment Service Architecture
+' Store Microservices – 07. Shipment Service Architecture
 ' Render: plantuml 07_ship_service.puml  →  07_ship_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 07. Shipment Service (ship-service) Architecture

@@ -34,9 +34,9 @@ class EventPublisher:
             params = pika.ConnectionParameters(host=self.host, port=self.port, credentials=credentials)
             connection = pika.BlockingConnection(params)
             channel = connection.channel()
-            channel.exchange_declare(exchange="bookstore.events", exchange_type="topic", durable=True)
+            channel.exchange_declare(exchange="store.events", exchange_type="topic", durable=True)
             channel.basic_publish(
-                exchange="bookstore.events",
+                exchange="store.events",
                 routing_key=event_type,
                 body=json.dumps(body),
                 properties=pika.BasicProperties(delivery_mode=2, content_type="application/json"),

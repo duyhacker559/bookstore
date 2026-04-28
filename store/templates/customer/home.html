@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}My Account - BookStore{% endblock %}
+{% block title %}My Account - Product Catalog{% endblock %}
 
 {% block content %}
 
@@ -527,7 +527,7 @@
             </div>
             <div class="stat-card">
                 <span class="stat-number">{{ total_books }}</span>
-                <span class="stat-label">Books Purchased</span>
+                <span class="stat-label">Products Purchased</span>
             </div>
             <div class="stat-card">
                 <span class="stat-number">${{ total_spent|floatformat:2 }}</span>
@@ -572,7 +572,7 @@
             <div class="quick-actions">
                 <a href="/" class="action-card">
                     <span class="action-icon">🛍️</span>
-                    <div class="action-title">Browse Books</div>
+                    <div class="action-title">Browse Products</div>
                     <div class="action-desc">Explore our collection</div>
                 </a>
                 <a href="/cart/" class="action-card">
@@ -669,9 +669,9 @@
                 <div class="section-header">
                     <h2 class="section-title">
                         <span>📝</span>
-                        <span>Your Reviewed Books</span>
+                        <span>Your Reviewed Products</span>
                     </h2>
-                    <a href="/" class="section-action">Find More Books</a>
+                    <a href="/books/" class="section-action">Find More Products</a>
                 </div>
 
                 <div class="orders-list">
@@ -694,13 +694,13 @@
                             </div>
                         </div>
                         <div class="order-actions">
-                            <a href="/{% firstof review.book.id 0 %}/" class="order-btn btn-view">Book Detail</a>
+                            <a href="/{% firstof review.book.id 0 %}/" class="order-btn btn-view">Product Detail</a>
                             <a href="/{% firstof review.book.id 0 %}/reviews/" class="order-btn btn-track">View Reviews</a>
                         </div>
                     </div>
                     {% empty %}
                     <div class="order-card">
-                        <div class="order-details">You have not reviewed any books yet.</div>
+                        <div class="order-details">You have not reviewed any products yet.</div>
                     </div>
                     {% endfor %}
                 </div>
@@ -771,7 +771,7 @@
                                 </div>
                                 <div class="order-detail-item">
                                     <span class="detail-label">Items</span>
-                                    <span class="detail-value">{{ order.items.count }} Book{{ order.items.count|pluralize }}</span>
+                                    <span class="detail-value">{{ order.items.count }} Product{{ order.items.count|pluralize }}</span>
                                 </div>
                                 <div class="order-detail-item">
                                     <span class="detail-label">Total</span>
@@ -804,7 +804,7 @@
                         <div class="empty-icon">📦</div>
                         <h3>No Orders Yet</h3>
                         <p>You haven't placed any orders. Start shopping to see your orders here!</p>
-                        <a href="/" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: white; border-radius: 8px; text-decoration: none;">Browse Books</a>
+                        <a href="/books/" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: white; border-radius: 8px; text-decoration: none;">Browse Products</a>
                     </div>
                         {% endif %}
             </section>

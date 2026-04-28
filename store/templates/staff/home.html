@@ -28,6 +28,11 @@
 .action-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-weight:600;font-size:.92rem;text-decoration:none;border:none;cursor:pointer;transition:all .18s;max-width:100%;white-space:normal;text-align:center;justify-content:center;}
 .action-btn-primary{background:var(--blue);color:#fff;}.action-btn-primary:hover{background:var(--blue-dark);}
 .action-btn-outline{background:#fff;color:#0f172a;border:1px solid #cbd5e1;}.action-btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+.ai-train-panel{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:-14px 0 28px;}
+.ai-train-panel .train-input{width:120px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:.9rem;}
+.ai-train-status{font-size:.86rem;color:#334155;}
+.ai-train-status.error{color:#dc2626;}
+.ai-train-status.success{color:#15803d;}
 /* ── Table card ── */
 .card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:28px;}
 .card-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;font-weight:700;color:#0f172a;display:flex;justify-content:space-between;align-items:center;}
@@ -53,7 +58,9 @@ tr:hover td{background:#f8fafc;}
     <nav>
       <a href="{% url 'staff_home' %}" class="active">🏠 Dashboard</a>
       <div class="nav-section">Catalogue</div>
-      <a href="{% url 'staff_books' %}">📚 Books</a>
+      <a href="{% url 'staff_books' %}">📦 All Products</a>
+      <a href="{% url 'staff_books' %}?product_type=book">📚 Books</a>
+      <a href="{% url 'staff_books' %}?product_type=clothing">👕 Clothing</a>
       <div class="nav-section">Orders</div>
       <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
       <div class="nav-section">Community</div>
@@ -93,7 +100,7 @@ tr:hover td{background:#f8fafc;}
         <div class="value" style="color:#16a34a;">{{ delivered_count }}</div>
       </div>
       <div class="stat-card">
-        <div class="label">Total Books</div>
+        <div class="label">Total Products</div>
         <div class="value" style="color:#7c3aed;">{{ total_books }}</div>
         {% if low_stock %}<div class="hint" style="color:#dc2626;">⚠ {{ low_stock }} low stock</div>{% endif %}
       </div>
@@ -102,11 +109,20 @@ tr:hover td{background:#f8fafc;}
     <!-- Quick Actions -->
     <div class="actions-row">
       <a href="{% url 'staff_manage_shipments' %}" class="action-btn action-btn-primary">🚚 Manage Shipments</a>
-      <a href="{% url 'staff_books' %}" class="action-btn action-btn-outline">📚 Manage Books</a>
+      <a href="{% url 'staff_books' %}" class="action-btn action-btn-outline">📦 All Products</a>
+      <a href="{% url 'staff_books' %}?product_type=book" class="action-btn action-btn-outline">📚 Books</a>
+      <a href="{% url 'staff_books' %}?product_type=clothing" class="action-btn action-btn-outline">👕 Clothing</a>
       <a href="{% url 'staff_feedback_moderation' %}" class="action-btn action-btn-outline">🛡 Moderate Feedback</a>
       <a href="{% url 'staff_inbox' %}" class="action-btn action-btn-outline">📥 Customer Inbox</a>
-      <a href="{% url 'staff_books' %}?action=add" class="action-btn action-btn-outline">➕ Add New Book</a>
+      <a href="{% url 'staff_books' %}?action=add" class="action-btn action-btn-outline">➕ Add New Product</a>
       <a href="{% url 'staff_analytics' %}" class="action-btn action-btn-outline">📊 View Analytics</a>
+    </div>
+
+    <div class="ai-train-panel">
+      <label for="ai-min-events" style="font-size:.9rem;font-weight:600;color:#0f172a;">AI Train min events</label>
+      <input id="ai-min-events" class="train-input" type="number" min="1" value="50" />
+      <button id="ai-train-btn" class="action-btn action-btn-primary" type="button">🤖 Train AI Model</button>
+      <span id="ai-train-status" class="ai-train-status">Ready</span>
     </div>
 
     <!-- Recent Shipments -->
@@ -141,5 +157,55 @@ tr:hover td{background:#f8fafc;}
     </div>
   </main>
 </div>
+
+<script>
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+
+  async function trainAiModel() {
+    const statusEl = document.getElementById('ai-train-status');
+    const btn = document.getElementById('ai-train-btn');
+    const minEventsInput = document.getElementById('ai-min-events');
+    const minEvents = Number(minEventsInput.value || 50);
+
+    statusEl.className = 'ai-train-status';
+    statusEl.textContent = 'Training...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch("{% url 'staff_ai_train_model' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ min_events: minEvents }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Training failed');
+      }
+
+      const trained = data?.deep_learning?.trained;
+      const trainedSamples = data?.deep_learning?.trained_samples;
+      statusEl.className = 'ai-train-status success';
+      statusEl.textContent = trained
+        ? `Done: trained with ${trainedSamples || 0} samples`
+        : (data.reason ? `Skipped: ${data.reason}` : 'Completed');
+    } catch (err) {
+      statusEl.className = 'ai-train-status error';
+      statusEl.textContent = err.message || 'Training failed';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('ai-train-btn').addEventListener('click', trainAiModel);
+</script>
 {% endblock %}
 

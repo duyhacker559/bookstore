@@ -1,8 +1,29 @@
+name: store
+
 services:
+  # MySQL Database (for Django monolith migration target)
+  mysql:
+    image: mysql:8.0
+    container_name: store-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-store}
+      MYSQL_USER: ${MYSQL_USER:-store}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-store_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u${MYSQL_USER:-store} -p${MYSQL_PASSWORD:-store_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
   # PostgreSQL Database (shared)
   postgres:
     image: postgres:14
-    container_name: bookstore-postgres
+    container_name: store-postgres
     environment:
       POSTGRES_USER: bookstore
       POSTGRES_PASSWORD: bookstore_password
@@ -21,7 +42,7 @@ services:
   # RabbitMQ Message Queue
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: bookstore-rabbitmq
+    container_name: store-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -41,7 +62,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bookstore-web
+    container_name: store-web
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
@@ -49,16 +70,32 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=True
-      - DATABASE_URL=postgresql://bookstore:bookstore_password@postgres:5432/bookstore
+      - DJANGO_DB_ENGINE=${DJANGO_DB_ENGINE:-sqlite3}
+      - SQLITE_PATH=${SQLITE_PATH:-/app/db.sqlite3}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-store}
+      - MYSQL_USER=${MYSQL_USER:-store}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-store_password}
+      - MYSQL_CONN_MAX_AGE=${MYSQL_CONN_MAX_AGE:-60}
       - PAYMENT_SERVICE_URL=http://payment-service:5000
       - PAYMENT_SERVICE_TOKEN=payment-service-token-123
       - SHIPPING_SERVICE_URL=http://shipping-service:5001
       - SHIPPING_SERVICE_TOKEN=shipping-service-token-123
+      - BEHAVIOR_SERVICE_URL=http://behavior-service:5004
+      - BEHAVIOR_SERVICE_TOKEN=behavior-service-token-123
+      - RAG_SERVICE_URL=http://rag-service:5005
+      - RAG_SERVICE_TOKEN=rag-service-token-123
+      - AI_BEHAVIOR_SERVICE_URL=http://ai-behavior-service:5006
+      - AI_BEHAVIOR_SERVICE_TOKEN=ai-behavior-service-token-123
+      - AI_ADVANCED_WIDGET_ENABLED=${AI_ADVANCED_WIDGET_ENABLED:-False}
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
     depends_on:
+      mysql:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       rabbitmq:
@@ -74,7 +111,7 @@ services:
     build:
       context: ./payment-service
       dockerfile: Dockerfile
-    container_name: bookstore-payment-service
+    container_name: store-payment-service
     command: uvicorn app:app --host 0.0.0.0 --port 5000 --reload
     volumes:
       - ./payment-service:/app
@@ -109,7 +146,7 @@ services:
     build:
       context: ./shipping-service
       dockerfile: Dockerfile
-    container_name: bookstore-shipping-service
+    container_name: store-shipping-service
     command: uvicorn app:app --host 0.0.0.0 --port 5001 --reload
     volumes:
       - ./shipping-service:/app
@@ -140,7 +177,7 @@ services:
     build:
       context: ./notification-service
       dockerfile: Dockerfile
-    container_name: bookstore-notification-service
+    container_name: store-notification-service
     command: uvicorn app:app --host 0.0.0.0 --port 5002 --reload
     volumes:
       - ./notification-service:/app
@@ -169,10 +206,82 @@ services:
       timeout: 10s
       retries: 3
 
+  # Behavior Service (FastAPI)
+  behavior-service:
+    build:
+      context: ./behavior-service
+      dockerfile: Dockerfile
+    container_name: store-behavior-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5004 --reload
+    volumes:
+      - ./behavior-service:/app
+    ports:
+      - "5004:5004"
+    environment:
+      - DEBUG=True
+      - BEHAVIOR_SERVICE_TOKEN=behavior-service-token-123
+      - BEHAVIOR_TRAIN_DATA_PATH=/app/data/vi_behavior_lexicon.json
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RAG Service (FastAPI)
+  rag-service:
+    build:
+      context: ./rag-service
+      dockerfile: Dockerfile
+    container_name: store-rag-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5005 --reload
+    volumes:
+      - ./rag-service:/app
+    ports:
+      - "5005:5005"
+    environment:
+      - DEBUG=True
+      - RAG_SERVICE_TOKEN=rag-service-token-123
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flask}
+      - GEMINI_API_VERSION=${GEMINI_API_VERSION:-v1beta}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # AI Behavior Service (FastAPI)
+  ai-behavior-service:
+    build:
+      context: ./ai-customer-behavior/service
+      dockerfile: Dockerfile
+    container_name: store-ai-behavior-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5006 --reload
+    volumes:
+      - ./ai-customer-behavior/service:/app
+    ports:
+      - "5006:5006"
+    environment:
+      - DEBUG=True
+      - AI_BEHAVIOR_SERVICE_TOKEN=ai-behavior-service-token-123
+      - AI_BEHAVIOR_DB_PATH=/app/data/behavior_events.db
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_API_VERSION=${GEMINI_API_VERSION:-v1beta}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
+  mysql_data:
   postgres_data:
   rabbitmq_data:
 
 networks:
   default:
-    name: bookstore-network
+    name: store-network

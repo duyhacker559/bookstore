@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, F, Count, Value, CharField, Min, Max, DecimalField, Case, When, FloatField, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from store.models.recommendation.recommendation import Recommendation
-from store.models.book.book import Book
+from store.models.product.product import Book
 from store.models.order.order_item import OrderItem
 from store.models.customer.customer import Customer
 
@@ -38,7 +38,24 @@ def data_model_recommendation(request):
     price_max = request.GET.get("price_max", "").strip()
     category = request.GET.get("category", "").strip()
     rating_min = request.GET.get("rating_min", "").strip()
+    product_type = request.GET.get("product_type", "").strip().lower()
     filter_type = request.GET.get("filter", "all").strip()
+
+    product_type_labels = {key: value for key, value in Book.PRODUCT_TYPE_CHOICES}
+    for type_key in Book.objects.values_list("product_type", flat=True).distinct():
+        if type_key and type_key not in product_type_labels:
+            product_type_labels[type_key] = type_key.replace("_", " ").title()
+
+    available_product_types = [
+        {
+            "value": type_key,
+            "label": product_type_labels.get(type_key, type_key.replace("_", " ").title()),
+        }
+        for type_key in sorted(
+            [value for value in Book.objects.values_list("product_type", flat=True).distinct() if value]
+        )
+    ]
+    valid_product_types = {item["value"] for item in available_product_types}
 
     # Base candidate set
     # world_pick uses global catalog behavior (including already purchased books)
@@ -52,11 +69,15 @@ def data_model_recommendation(request):
         recommendations = recommendations.filter(
             Q(title__icontains=query)
             | Q(author__icontains=query)
+            | Q(brand__icontains=query)
             | Q(author_fk__name__icontains=query)
             | Q(category__icontains=query)
             | Q(category_fk__name__icontains=query)
             | Q(categories_m2m__name__icontains=query)
         )
+
+    if product_type and product_type in valid_product_types:
+        recommendations = recommendations.filter(product_type=product_type)
     
     # Apply price range filter
     if price_min:
@@ -173,11 +194,14 @@ def data_model_recommendation(request):
             world_pick_qs = world_pick_qs.filter(
                 Q(title__icontains=query)
                 | Q(author__icontains=query)
+                | Q(brand__icontains=query)
                 | Q(author_fk__name__icontains=query)
                 | Q(category__icontains=query)
                 | Q(category_fk__name__icontains=query)
                 | Q(categories_m2m__name__icontains=query)
             )
+        if product_type and product_type in valid_product_types:
+            world_pick_qs = world_pick_qs.filter(product_type=product_type)
         if price_min:
             try:
                 world_pick_qs = world_pick_qs.filter(price__gte=float(price_min))
@@ -205,6 +229,53 @@ def data_model_recommendation(request):
         ).order_by('-popularity', '-rating', '-review_count')[:FRAME_RECOMMENDATION_LIMIT]
         world_pick_books = list(world_pick_qs)
         _decorate_books(world_pick_books)
+
+    # Fallback: if personalized and world picks are empty, pull from filtered catalog
+    if not primary_books and not world_pick_books:
+        fallback_qs = Book.objects.prefetch_related('images', 'categories_m2m').all()
+
+        if query:
+            fallback_qs = fallback_qs.filter(
+                Q(title__icontains=query)
+                | Q(author__icontains=query)
+                | Q(brand__icontains=query)
+                | Q(author_fk__name__icontains=query)
+                | Q(category__icontains=query)
+                | Q(category_fk__name__icontains=query)
+                | Q(categories_m2m__name__icontains=query)
+            )
+
+        if product_type and product_type in valid_product_types:
+            fallback_qs = fallback_qs.filter(product_type=product_type)
+
+        if price_min:
+            try:
+                fallback_qs = fallback_qs.filter(price__gte=float(price_min))
+            except ValueError:
+                pass
+        if price_max:
+            try:
+                fallback_qs = fallback_qs.filter(price__lte=float(price_max))
+            except ValueError:
+                pass
+        if category:
+            fallback_qs = fallback_qs.filter(
+                Q(categories_m2m__name__iexact=category)
+                | Q(category__icontains=category)
+                | Q(category_fk__name__iexact=category)
+            )
+        if rating_min:
+            try:
+                fallback_qs = fallback_qs.filter(rating__gte=float(rating_min))
+            except ValueError:
+                pass
+
+        fallback_books = list(
+            fallback_qs.distinct().order_by('-rating', '-review_count')[:PRIMARY_RECOMMENDATION_LIMIT]
+        )
+        _decorate_books(fallback_books)
+        primary_books = fallback_books
+        top_match_score = primary_books[0].match_score if primary_books else 0
     
     # Get available categories for filter
     all_categories = sorted({
@@ -215,19 +286,26 @@ def data_model_recommendation(request):
     
     # Get price range for filter
     price_stats = Book.objects.aggregate(min_price=Min('price'), max_price=Max('price'))
+    merged_recommendations = primary_books + world_pick_books
+    avg_rating_value = 0
+    if merged_recommendations:
+        avg_rating_value = round(sum(float(book.rating or 0) for book in merged_recommendations) / len(merged_recommendations), 1)
     
     return render(request, "recommendation/list.html", {
         "books": primary_books,
         "world_pick_books": world_pick_books,
         "total_recommendations": len(primary_books) + len(world_pick_books),
         "top_match_score": top_match_score,
+        "avg_rating_value": avg_rating_value,
         "query": query,
         "price_min": price_min,
         "price_max": price_max,
         "category": category,
         "rating_min": rating_min,
+        "product_type": product_type,
         "filter_type": filter_type,
         "categories": all_categories,
+        "available_product_types": available_product_types,
         "min_price": price_stats.get("min_price") or 0,
         "max_price": price_stats.get("max_price") or 100,
     })

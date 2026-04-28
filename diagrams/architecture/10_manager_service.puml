@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 10. Manager Service Architecture
+' Store Microservices – 10. Manager Service Architecture
 ' Render: plantuml 10_manager_service.puml  →  10_manager_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 10. Manager Service Architecture

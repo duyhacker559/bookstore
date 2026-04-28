@@ -2,7 +2,7 @@ from django.contrib import admin
 from store.models import (
     Book, Customer, Staff, Order, OrderItem, Payment, Shipment, Cart, Recommendation,
     Author, Category, BookDetail, BookImage, Inventory, UserProfile, Rating, Comment,
-    UserNotification, InboxMessage, InboxReply
+    UserNotification, InboxMessage, InboxReply, AIChatSession, AIChatMessage
 )
 
 class OrderItemInline(admin.TabularInline):
@@ -84,6 +84,18 @@ class InboxReplyAdmin(admin.ModelAdmin):
     list_filter = ('sender_type', 'created_at')
     search_fields = ('inbox_message__subject', 'content')
 
+
+class AIChatSessionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'customer', 'session_id', 'source', 'started_at', 'last_activity_at')
+    list_filter = ('source', 'started_at', 'last_activity_at')
+    search_fields = ('customer__name', 'customer__user__username', 'session_id')
+
+
+class AIChatMessageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'session', 'role', 'message_type', 'created_at')
+    list_filter = ('role', 'message_type', 'created_at')
+    search_fields = ('session__session_id', 'content')
+
 admin.site.register(Book, BookAdmin)
 admin.site.register(Customer)
 admin.site.register(Staff)
@@ -103,3 +115,5 @@ admin.site.register(Comment, CommentAdmin)
 admin.site.register(UserNotification, UserNotificationAdmin)
 admin.site.register(InboxMessage, InboxMessageAdmin)
 admin.site.register(InboxReply, InboxReplyAdmin)
+admin.site.register(AIChatSession, AIChatSessionAdmin)
+admin.site.register(AIChatMessage, AIChatMessageAdmin)

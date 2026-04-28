@@ -55,7 +55,7 @@
             <div class="card-body">
                 {% for item in order_items %}
                 <div class="item">
-                    <a class="cover" href="{% url 'book_detail' book_id=item.book.id %}" aria-label="View {{ item.book.title }} details">
+                    <a class="cover" href="{% url 'detail_redirect' book_id=item.book.id %}" aria-label="View {{ item.book.title }} details">
                         {% if item.book.cover_image %}
                         <img src="{{ item.book.cover_image }}" alt="{{ item.book.title }} cover">
                         {% else %}
@@ -114,7 +114,7 @@
     <div class="section-note" style="margin-top: 14px;">A confirmation email has been sent to <strong>{{ user.email }}</strong>.</div>
 
     <div class="actions">
-        <a href="{% url 'book_list' %}" class="btn btn-primary">Continue Shopping</a>
+        <a href="{% url 'home' %}" class="btn btn-primary">Continue Shopping</a>
         {% if shipment %}
         <a href="{% url 'order_track' order_id=order.id %}" class="btn btn-secondary">Track Order</a>
         {% endif %}

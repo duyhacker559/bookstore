@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Shopping Cart - BookStore{% endblock %}
+{% block title %}Shopping Cart - Product Catalog{% endblock %}
 
 {% block content %}
 <style>
@@ -283,11 +283,11 @@
 }
 </style>
 
-<div class="cart-page" data-book-list-url="{% url 'book_list' %}">
+<div class="cart-page" data-book-list-url="{% url 'home' %}">
     <div class="cart-head">
         <div>
             <h1 class="cart-title">🛒 Shopping Cart</h1>
-            <p class="cart-subtitle">Review your selected books before checkout.</p>
+            <p class="cart-subtitle">Review your selected products before checkout.</p>
         </div>
     </div>
 
@@ -319,7 +319,7 @@
 
                 <div>
                     <h3 class="item-title">{{ item.book.title }}</h3>
-                    <p class="item-author">Author: {{ item.book.author }}</p>
+                    <p class="item-author">{{ item.book.creator_label }}: {{ item.book.creator_display }}</p>
                     <div class="item-meta">
                         <span class="unit-price">${{ item.book.price|floatformat:2 }} each</span>
                         <span class="qty-chip" data-role="qty-chip">Qty: {{ item.quantity }}</span>
@@ -374,13 +374,13 @@
             <a href="{% url 'customer_register' %}" class="secondary-cta">Create Account</a>
             {% endif %}
 
-            <a href="{% url 'book_list' %}" class="ghost-cta">Continue Shopping</a>
+            <a href="{% url 'catalog' %}" class="ghost-cta">Continue Shopping</a>
         </div>
     </div>
     {% else %}
     <div class="empty-cart">
         <p style="font-size: 1.2rem; color: #64748b; margin-bottom: 30px;">Your cart is empty</p>
-        <a href="{% url 'book_list' %}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: 700;">Start Shopping</a>
+        <a href="{% url 'catalog' %}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg,#1d4ed8 0%,#1e3a8a 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: 700;">Start Shopping</a>
     </div>
     {% endif %}
 </div>

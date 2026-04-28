@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 08. Comment & Rate Service Architecture
+' Store Microservices – 08. Comment & Rate Service Architecture
 ' Render: plantuml 08_comment_rate_service.puml  →  08_comment_rate_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 08. Comment & Rate Service Architecture
@@ -26,8 +26,8 @@ package "comment-rate-service  :8010" {
 
   package "commentrates app" {
     component "CommentRateListCreateView\nGET  /comment-rates/\nPOST /comment-rates/" as view
-    component "CommentRateSerializer\n- customer_id (required)\n- book_id     (required)\n- comment     (text)\n- rating      (1–5 integer)" as serial
-    component "CommentRate Model\n──────────────\nid         : AutoField\ncustomer_id: IntegerField\nbook_id    : IntegerField\ncomment    : TextField\nrating     : IntegerField (1–5)" as model
+    component "CommentRateSerializer\n- customer_id (required)\n- product_id  (required)\n- comment     (text)\n- rating      (1–5 integer)" as serial
+    component "CommentRate Model\n──────────────\nid         : AutoField\ncustomer_id: IntegerField\nproduct_id : IntegerField\ncomment    : TextField\nrating     : IntegerField (1–5)" as model
   }
 }
 
@@ -43,9 +43,9 @@ view    --> gw      : 200 OK / 201 Created
 rec_svc ..> db      : reads interaction data\n(for recommendation model)
 
 note bottom of model
-  customer_id and book_id are logical
+  customer_id and product_id are logical
   foreign keys (no direct DB join to
-  customer-service or book-service).
+  customer-service or product-service).
   Rating range: 1 (worst) to 5 (best).
   Used as input features by
   recommender-ai-service.

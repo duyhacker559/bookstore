@@ -42,7 +42,7 @@ class EventBus:
         })
     """
     
-    EXCHANGE_NAME = 'bookstore.events'
+    EXCHANGE_NAME = 'store.events'
     EXCHANGE_TYPE = 'topic'
     
     # Supported event topics

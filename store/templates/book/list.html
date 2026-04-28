@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Our Book Collection{% endblock %}
+{% block title %}Our Product Collection{% endblock %}
 
 {% block content %}
 
@@ -1160,14 +1160,62 @@
 }
 </style>
 
+{% if is_clothing_page %}
+<style>
+.sidebar {
+    background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+    border: 1px solid #fed7aa;
+}
+
+.filter-section {
+    border-color: #fdba74;
+    background: #fffaf0;
+}
+
+.filter-title,
+.filter-section-title,
+.results-info {
+    color: #9a3412;
+}
+
+.card {
+    border: 1px solid #fed7aa;
+    box-shadow: 0 8px 22px rgba(194, 65, 12, 0.08);
+}
+
+.card:hover {
+    border-color: #ea580c;
+    box-shadow: 0 18px 34px rgba(194, 65, 12, 0.16);
+}
+
+.card-price {
+    color: #c2410c;
+}
+
+.category-badge {
+    background: #ffedd5;
+    color: #9a3412;
+    border-color: #fdba74;
+}
+
+.btn-add {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+}
+
+.btn-add:hover {
+    box-shadow: 0 10px 18px rgba(194, 65, 12, 0.24);
+}
+</style>
+{% endif %}
+
 {% if not catalog_only %}
 <!-- Hero Section with Search -->
 <div class="hero-section">
     <div class="container">
         <div class="hero-eyebrow">Personalized Picks</div>
-        <h1 class="hero-title">Discover Your Next Great Read</h1>
+        <h1 class="hero-title">Discover Your Next Great Product</h1>
         <p class="hero-subtitle">
-            Explore editor favorites, trending books, and reader-loved titles in one friendly place. Start with recommendations, then jump into the full catalog when you are ready.
+            Explore trending products and customer-loved picks in one friendly place. Start with recommendations, then jump into the full catalog when you are ready.
         </p>
         
         <!-- Modern Search Bar -->
@@ -1177,7 +1225,7 @@
                 <input type="text"
                        id="heroSearchInput"
                        class="hero-search-input"
-                       placeholder="Search by title, author, or ISBN..."
+                       placeholder="Search by title, creator, brand, or category..."
                        value="{{ q|default:'' }}"
                        autocomplete="off"
                        spellcheck="false">
@@ -1185,31 +1233,33 @@
                     Search
                 </button>
             </div>
-            <p class="hero-search-hint" id="heroSearchHint">{% if q %}Ready to open Books for &ldquo;{{ q }}&rdquo;{% else %}Type a title and press Enter to open Books page{% endif %}</p>
+            <p class="hero-search-hint" id="heroSearchHint">{% if q %}Ready to search products for &ldquo;{{ q }}&rdquo;{% else %}Type a keyword and press Enter to open the catalog{% endif %}</p>
 
             <!-- Quick Search Tags -->
             <div class="quick-search">
                 <span class="quick-search-label">Try:</span>
-                <a href="{% url 'book_catalog' %}?q=fiction"    class="quick-tag {% if q == 'fiction'    %}active{% endif %}" data-q="fiction">Fiction</a>
-                <a href="{% url 'book_catalog' %}?q=science"    class="quick-tag {% if q == 'science'    %}active{% endif %}" data-q="science">Science</a>
-                <a href="{% url 'book_catalog' %}?q=biography"  class="quick-tag {% if q == 'biography'  %}active{% endif %}" data-q="biography">Biography</a>
-                <a href="{% url 'book_catalog' %}?q=bestseller" class="quick-tag {% if q == 'bestseller' %}active{% endif %}" data-q="bestseller">Bestseller</a>
+                {% for item in available_product_types|slice:":4" %}
+                <a href="{% url 'catalog' %}?type={{ item.value }}" class="quick-tag {% if product_type == item.value %}active{% endif %}" data-q="{{ item.label }}">{{ item.label }}</a>
+                {% empty %}
+                <a href="{% url 'catalog' %}?q=trending" class="quick-tag {% if q == 'trending' %}active{% endif %}" data-q="trending">Trending</a>
+                <a href="{% url 'catalog' %}?q=new" class="quick-tag {% if q == 'new' %}active{% endif %}" data-q="new">New</a>
+                {% endfor %}
             </div>
         </div>
 
         <div class="hero-actions">
             <a href="#recommendations" class="btn btn-primary">⭐ Start With Recommendations</a>
-            <a href="{% url 'book_catalog' %}" class="btn-outline-hero">📚 Open Books Catalog</a>
+            <a href="{% url 'catalog' %}" class="btn-outline-hero">📦 Open Product Catalog</a>
         </div>
 
         <div class="hero-insights">
             <div class="insight-card">
                 <strong>{{ total_books }}+</strong>
-                <span>Books available to explore</span>
+                <span>Products available to explore</span>
             </div>
             <div class="insight-card">
                 <strong>Top Rated</strong>
-                <span>Home feed prioritizes highly rated picks</span>
+                <span>Home feed prioritizes highly rated {{ top_product_type_label|lower }}</span>
             </div>
             <div class="insight-card">
                 <strong>Fast Discovery</strong>
@@ -1219,9 +1269,9 @@
     </div>
 </div>
 
-<!-- Why Choose BookStore Section -->
+<!-- Why Choose Marketplace Section -->
 <div class="container" style="margin-bottom: 80px;">
-    <h2 style="text-align: center; font-size: 2rem; margin-bottom: 50px; color: #1e293b;">Why Choose BookStore?</h2>
+    <h2 style="text-align: center; font-size: 2rem; margin-bottom: 50px; color: #1e293b;">Why Choose Our Marketplace?</h2>
 
     <div class="features-grid">
         <!-- Feature 1 -->
@@ -1229,7 +1279,7 @@
             <div class="feature-icon">🚚</div>
             <h3 class="feature-title">Fast Delivery</h3>
             <p class="feature-description">
-                Get your books delivered quickly with our express shipping options. Free shipping on orders over $30.
+                Get your products delivered quickly with our express shipping options. Free shipping on orders over $30.
             </p>
         </div>
 
@@ -1238,7 +1288,7 @@
             <div class="feature-icon">📦</div>
             <h3 class="feature-title">Vast Collection</h3>
             <p class="feature-description">
-                Browse through thousands of books across all genres, from classic literature to modern bestsellers.
+                Browse through a growing multi-category catalog, from books to apparel and more.
             </p>
         </div>
 
@@ -1247,7 +1297,7 @@
             <div class="feature-icon">⭐</div>
             <h3 class="feature-title">Expert Reviews</h3>
             <p class="feature-description">
-                Read authentic reviews from book lovers and experts to help you choose your next great read.
+                Read authentic reviews from verified customers to choose the right product faster.
             </p>
         </div>
     </div>
@@ -1277,7 +1327,7 @@
                 <h3 class="card-title">
                     <a href="/{{ book.id }}/">{{ book.title|truncatechars:40 }}</a>
                 </h3>
-                <p class="card-author">by {{ book.author }}</p>
+                <p class="card-author">{{ book.creator_label }}: {{ book.creator_display }}</p>
 
                 <div class="star-rating">
                     <span>
@@ -1298,10 +1348,10 @@
 </div>
 {% endif %}
 
-<!-- Our Book Collection Section Header -->
+<!-- Store Collection Section Header -->
 <div class="container" id="books" style="margin-bottom: 20px;">
-    <h2 style="font-size: 2rem; margin-bottom: 10px; color: #1e293b;">Our Book Collection</h2>
-    <p style="color: #64748b; margin-bottom: 30px;">Discover thousands of books across all genres</p>
+    <h2 style="font-size: 2rem; margin-bottom: 10px; color: #1e293b;">{{ collection_title|default:"Our Store Collection" }}</h2>
+    <p style="color: #64748b; margin-bottom: 30px;">{{ collection_subtitle|default:"Discover books, apparel, and more in one catalog" }}</p>
 </div>
 
 <div class="main-layout {% if not catalog_only %}home-layout{% endif %}">
@@ -1317,6 +1367,26 @@
         <form method="get" id="filterForm">
             <!-- Preserve search query -->
             {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+
+            {% if show_type_filter %}
+            <div class="filter-section">
+                <h4 class="filter-section-title">Product Type</h4>
+                <label class="checkbox-item">
+                    <input type="radio" name="type" value="" {% if not product_type %}checked{% endif %}>
+                    <span>All</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="radio" name="type" value="book" {% if product_type == 'book' %}checked{% endif %}>
+                    <span>Books</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="radio" name="type" value="clothing" {% if product_type == 'clothing' %}checked{% endif %}>
+                    <span>Clothing</span>
+                </label>
+            </div>
+            {% else %}
+            <input type="hidden" name="type" value="{{ product_type }}">
+            {% endif %}
 
             {% if selected_categories or min_price or max_price or min_rating or in_stock == "1" %}
             <div class="active-filter-summary">Applied filters: {{ active_filters_count }}</div>
@@ -1430,9 +1500,9 @@
         {% if catalog_only %}
         <div class="controls-bar">
             <div class="results-info">
-                <span>Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_books }} books</span>
+                <span>Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_books }} products</span>
                 {% if q or selected_categories or min_price or max_price or min_rating %}
-                <a href="{% if catalog_only %}{% url 'book_catalog' %}{% else %}{% url 'book_list' %}{% endif %}" class="clear-filters-btn">
+                <a href="{% if catalog_only %}{{ catalog_url }}{% else %}{% url 'home' %}{% endif %}" class="clear-filters-btn">
                     <span>✕</span>
                     <span>Clear filters</span>
                 </a>
@@ -1461,7 +1531,7 @@
         </div>
         {% else %}
         <div class="home-results-info">
-            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_books }} books
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_books }} products
         </div>
         {% endif %}
 
@@ -1480,7 +1550,7 @@
                     <h3 class="card-title">
                         <a href="/{{ book.id }}/">{{ book.title|truncatechars:40 }}</a>
                     </h3>
-                    <p class="card-author">by {{ book.author }}</p>
+                    <p class="card-author">{{ book.creator_label }}: {{ book.creator_display }}</p>
 
                     <div class="card-categories">
                         {% if book.category_names %}
@@ -1518,9 +1588,9 @@
             </div>
             {% empty %}
             <div class="empty-state">
-                <h3>No books found matching your search 😔</h3>
+                <h3>No products found matching your search 😔</h3>
                 <p style="color: #64748b; margin: 16px 0;">Try adjusting your filters or search terms</p>
-                <a href="{% if catalog_only %}{% url 'book_catalog' %}{% else %}{% url 'book_list' %}{% endif %}">Clear All Filters</a>
+                <a href="{% if catalog_only %}{{ catalog_url }}{% else %}{% url 'home' %}{% endif %}">Clear All Filters</a>
             </div>
             {% endfor %}
         </div>
@@ -1630,7 +1700,7 @@
     }
   }
 
-  // ── Hero search form ─────────────────────────────────────
+    // ── Hero search form ─────────────────────────────────────
     // ── Hero search helpers ──────────────────────────────────
     function getHeroQuery() {
         var el = document.getElementById('heroSearchInput');
@@ -1650,7 +1720,7 @@
     }
 
     function runHeroSearch(q) {
-        var base = "{% url 'book_catalog' %}";
+        var base = "{{ catalog_url|default:'/books/' }}";
         var target = q ? (base + '?q=' + encodeURIComponent(q)) : base;
         window.location.href = target;
     }
@@ -1682,7 +1752,7 @@
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(function () {
                 var current = getHeroQuery();
-                setHint(current ? 'Press Enter to open Books for "' + current + '"' : 'Type a title and press Enter to open Books page', !!current);
+                setHint(current ? 'Press Enter to search products for "' + current + '"' : 'Type a keyword and press Enter to open the catalog', !!current);
             }, 200);
         });
     }
@@ -1705,7 +1775,7 @@
         var q = params.get('q') || '';
         var info = document.querySelector('.home-results-info, .results-info span');
         if (info) {
-            setHint(q ? 'Results for \u201c' + q + '\u201d' : 'Showing all books', true);
+            setHint(q ? 'Results for \u201c' + q + '\u201d' : 'Showing all products', true);
         } else {
             setHint(q ? 'No results for \u201c' + q + '\u201d' : '', false);
         }

@@ -1,6 +1,6 @@
 from django.db import models
 from store.models.customer.customer import Customer
-from store.models.book.book import Book
+from store.models.product.product import Book
 
 class Rating(models.Model):
     SCORE_CHOICES = [

@@ -68,6 +68,7 @@ RELEASE_READINESS_REPORT.md
 # Local test scripts not needed in deployment repo
 test_*.py
 phase3_e2e_test.py
+setup_phase1.py
 store/tests*.py
 payment-service/tests/
 
@@ -76,3 +77,6 @@ generate_*.py
 ass05*
 */ass05*
 tutorial.pdf
+
+# Consolidated local-only files folder
+_github_not_needed/

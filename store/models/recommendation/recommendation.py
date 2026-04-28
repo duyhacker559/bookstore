@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from store.models.book.book import Book
+from store.models.product.product import Book
 
 class Recommendation(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

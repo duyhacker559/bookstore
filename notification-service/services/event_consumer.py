@@ -69,7 +69,7 @@ class EventConsumer:
 
             # Declare exchange
             self.channel.exchange_declare(
-                exchange="bookstore.events",
+                exchange="store.events",
                 exchange_type="topic",
                 durable=True,
             )
@@ -79,9 +79,9 @@ class EventConsumer:
             self.channel.queue_declare(queue=queue_name, durable=True)
 
             # Bind to events we care about
-            self.channel.queue_bind(exchange="bookstore.events", queue=queue_name, routing_key="order.paid")
-            self.channel.queue_bind(exchange="bookstore.events", queue=queue_name, routing_key="shipment.created")
-            self.channel.queue_bind(exchange="bookstore.events", queue=queue_name, routing_key="shipment.updated")
+            self.channel.queue_bind(exchange="store.events", queue=queue_name, routing_key="order.paid")
+            self.channel.queue_bind(exchange="store.events", queue=queue_name, routing_key="shipment.created")
+            self.channel.queue_bind(exchange="store.events", queue=queue_name, routing_key="shipment.updated")
 
             logger.info(f"Listening for events on queue: {queue_name}")
 

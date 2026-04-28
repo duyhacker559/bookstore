@@ -1,6 +1,6 @@
 from django.db import models
 from store.models.customer.customer import Customer
-from store.models.book.book import Book
+from store.models.product.product import Book
 
 
 class UserNotification(models.Model):
@@ -69,3 +69,55 @@ class InboxReply(models.Model):
 
     def __str__(self):
         return f"Reply {self.id} on Inbox {self.inbox_message_id}"
+
+
+class AIChatSession(models.Model):
+    SOURCE_CHOICES = [
+        ("widget", "Widget"),
+        ("api", "API"),
+    ]
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="ai_chat_sessions")
+    session_id = models.CharField(max_length=120, db_index=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="widget")
+    started_at = models.DateTimeField(auto_now_add=True)
+    last_activity_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-last_activity_at"]
+        app_label = "store"
+        constraints = [
+            models.UniqueConstraint(fields=["customer", "session_id"], name="uniq_customer_ai_session")
+        ]
+
+    def __str__(self):
+        return f"AI Session {self.session_id} for {self.customer.name}"
+
+
+class AIChatMessage(models.Model):
+    ROLE_CHOICES = [
+        ("user", "User"),
+        ("assistant", "Assistant"),
+        ("system", "System"),
+    ]
+
+    TYPE_CHOICES = [
+        ("chat_question", "Chat Question"),
+        ("chat_answer", "Chat Answer"),
+        ("recommendation", "Recommendation"),
+        ("error", "Error"),
+    ]
+
+    session = models.ForeignKey(AIChatSession, on_delete=models.CASCADE, related_name="messages")
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    message_type = models.CharField(max_length=30, choices=TYPE_CHOICES, default="chat_answer")
+    content = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        app_label = "store"
+
+    def __str__(self):
+        return f"{self.role} message {self.id} in session {self.session_id}"

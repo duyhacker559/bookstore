@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 12. Recommender AI Service Architecture
+' Store Microservices – 12. Recommender AI Service Architecture
 ' Render: plantuml 12_recommender_ai_service.puml  →  12_recommender_ai_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 12. Recommender AI Service Architecture

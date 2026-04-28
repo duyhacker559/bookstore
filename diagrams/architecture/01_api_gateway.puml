@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 01. API Gateway Architecture
+' Store Microservices – 01. API Gateway Architecture
 ' Render: plantuml 01_api_gateway.puml  →  01_api_gateway.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 01. API Gateway Architecture
@@ -27,7 +27,7 @@ package "api-gateway  :8000" {
   component "Views\n(proxy + aggregate)" as views
   note right of views
     GET  /
-    GET|POST /books/
+    GET|POST /products/
     GET|POST /customers/
     GET|POST /cart-items/
     GET|POST /cart-detail/
@@ -39,7 +39,7 @@ package "api-gateway  :8000" {
 
 package "Downstream Services (internal network)" {
   component "customer-service\n:8001"         as cs
-  component "book-service\n:8005"             as bs
+  component "product-service\n:8005"          as psvc
   component "cart-service\n:8006"             as carts
   component "order-service\n:8007"            as os
   component "pay-service\n:8008"              as ps
@@ -54,7 +54,7 @@ package "Downstream Services (internal network)" {
 client  --> router  : HTTP request
 router  --> views
 views   --> cs
-views   --> bs
+views   --> psvc
 views   --> carts
 views   --> os
 views   --> ps

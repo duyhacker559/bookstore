@@ -1,5 +1,5 @@
 from django.db import models
-from store.models.book.book import Book
+from store.models.product.product import Book
 
 class Inventory(models.Model):
     book = models.OneToOneField(Book, related_name='inventory', on_delete=models.CASCADE)

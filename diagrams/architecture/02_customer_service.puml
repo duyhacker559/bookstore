@@ -1,6 +1,6 @@
 @startuml
 ' ─────────────────────────────────────────────────────────────────────────────
-' BookStore Microservices – 02. Customer Service Architecture
+' Store Microservices – 02. Customer Service Architecture
 ' Render: plantuml 02_customer_service.puml  →  02_customer_service.png
 ' ─────────────────────────────────────────────────────────────────────────────
 title 02. Customer Service Architecture

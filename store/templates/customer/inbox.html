@@ -20,11 +20,11 @@
     <form method="post" style="display:grid; gap:10px;">
       {% csrf_token %}
       <div>
-        <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Book (optional)</label>
+        <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Product (optional)</label>
         <select name="book_id" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
           <option value="">General question</option>
           {% if prefill_book %}
-          <option value="{{ prefill_book.id }}" selected>{{ prefill_book.title }}</option>
+          <option value="{{ prefill_book.id }}" selected>{{ prefill_book.title }} ({{ prefill_book.product_type|title }})</option>
           {% endif %}
         </select>
       </div>
@@ -57,7 +57,12 @@
       {% for msg in inbox_messages %}
       <div style="border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
         <div style="display:flex; justify-content:space-between; gap:10px;">
-          <div style="font-weight:700; color:#0f172a;">{{ msg.subject }}</div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <div style="font-weight:700; color:#0f172a;">{{ msg.subject }}</div>
+            {% if msg.book %}
+            <a href="{% url 'detail_redirect' msg.book.id %}" style="text-decoration:none; font-size:0.76rem; background:#dbeafe; color:#1e3a8a; padding:2px 8px; border-radius:999px;">{{ msg.book.title|truncatechars:40 }}</a>
+            {% endif %}
+          </div>
           <div style="display:flex; gap:8px; align-items:center;">
             <span style="font-size:0.82rem; color:#64748b;">{{ msg.created_at|date:"Y-m-d H:i" }}</span>
             <button type="button" class="collapse-toggle" data-toggle-target="customer-thread-{{ msg.id }}" aria-expanded="false">Expand</button>
@@ -66,7 +71,10 @@
         <div id="customer-thread-{{ msg.id }}" class="collapse-body is-collapsed">
         <div style="margin-top:6px; color:#475569;">{{ msg.content }}</div>
         <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <span style="font-size:0.82rem; color:#64748b;">{% if msg.book %}Book: {{ msg.book.title }}{% else %}General{% endif %}</span>
+          <span style="font-size:0.82rem; color:#64748b;">{% if msg.book %}Product: {{ msg.book.title }}{% else %}General{% endif %}</span>
+          {% if msg.book %}
+          <a href="{% url 'detail_redirect' msg.book.id %}" style="text-decoration:none; font-size:0.82rem; background:#dbeafe; color:#1e3a8a; padding:2px 8px; border-radius:999px;">View product</a>
+          {% endif %}
           <span class="msg-status {% if msg.status == 'unread' %}msg-status-unread{% else %}msg-status-read{% endif %}">{% if msg.status == 'unread' %}Awaiting staff{% else %}Handled{% endif %}</span>
           <span style="font-size:0.82rem; color:#64748b;">Replies: {{ msg.reply_count|default:0 }}</span>
           <a href="{% url 'customer_inbox_thread' msg.id %}" style="text-decoration:none; font-size:0.82rem; background:#e2e8f0; color:#1e293b; padding:2px 8px; border-radius:999px;">Open thread</a>

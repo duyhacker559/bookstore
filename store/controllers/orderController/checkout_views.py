@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.contrib import messages
-from store.models.book.book import Book
+from store.models.product.product import Book
 from store.models.cart.cart import Cart, CartItem
 from store.models.customer.customer import Customer
 from store.models.order.order import Order
@@ -93,7 +93,7 @@ def add_to_cart(request, book_id):
     
     if book.stock <= 0:
         messages.error(request, f'"{book.title}" is currently out of stock.')
-        return redirect('book_list')
+        return redirect('home')
 
     requested_quantity = cart_item.quantity + quantity if not created else quantity
     final_quantity = min(max(requested_quantity, 1), book.stock)
@@ -104,7 +104,7 @@ def add_to_cart(request, book_id):
         messages.warning(request, f'Only {book.stock} copy(ies) of "{book.title}" are in stock. Cart quantity adjusted.')
     else:
         messages.success(request, f'{quantity} copy(ies) of "{book.title}" added to cart!')
-    return redirect('book_list')
+    return redirect('home')
 
 
 def remove_from_cart(request, book_id):
@@ -275,7 +275,7 @@ def checkout(request):
     
     if not cart or not cart.items.exists():
         messages.error(request, 'Your cart is empty')
-        return redirect('book_list')
+        return redirect('home')
     
     if request.method == 'POST':
         full_name = request.POST.get('full_name', '')
@@ -420,7 +420,7 @@ def payment_confirm(request, order_id):
     # Verify customer owns this order
     if order.customer.user != request.user:
         messages.error(request, 'Unauthorized access')
-        return redirect('book_list')
+        return redirect('home')
     
     if request.method == 'POST':
         payment_method_id = request.POST.get('method', '')  # Changed from 'payment_method_id' to 'method' to match form field
@@ -556,7 +556,7 @@ def order_success(request, order_id):
     # Verify customer owns this order
     if order.customer.user != request.user:
         messages.error(request, 'Unauthorized access')
-        return redirect('book_list')
+        return redirect('home')
     
     payment = Payment.objects.filter(order=order).first()
     shipment = Shipment.objects.filter(order=order).first()
@@ -596,7 +596,7 @@ def track_shipment(request, shipment_id):
     if request.user.is_authenticated:
         if shipment.order.customer.user != request.user:
             messages.error(request, 'Unauthorized access')
-            return redirect('book_list')
+            return redirect('home')
     
     return render(request, 'order/track_shipment_improved.html', {
         'shipment': shipment,
@@ -614,7 +614,7 @@ def track_order(request, order_id):
     if request.user.is_authenticated:
         if order.customer.user != request.user:
             messages.error(request, 'Unauthorized access')
-            return redirect('book_list')
+            return redirect('home')
 
     return render(request, 'order/track_shipment_improved.html', {
         'shipment': shipment,

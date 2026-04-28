@@ -1,7 +1,7 @@
 # Architecture Diagrams — PlantUML Source
 
 This folder contains PlantUML source files for every service in the
-BookStore microservices system.
+Store microservices system.
 
 ## Files
 
@@ -10,8 +10,8 @@ BookStore microservices system.
 | `00_overview.puml`               | Full system overview (all 12 services) |
 | `01_api_gateway.puml`            | API Gateway routing and proxy |
 | `02_customer_service.puml`       | Customer Service + cart auto-creation |
-| `03_book_service.puml`           | Book Service + staff book management |
-| `04_cart_service.puml`           | Cart Service + book validation flow |
+| `03_book_service.puml`           | Product Service + staff product management |
+| `04_cart_service.puml`           | Cart Service + product validation flow |
 | `05_order_service.puml`          | Order Service + payment/ship orchestration |
 | `06_pay_service.puml`            | Payment Service |
 | `07_ship_service.puml`           | Shipment Service |
