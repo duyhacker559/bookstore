@@ -1,10 +1,10 @@
 """
 Management command to migrate product data to JSONField attributes
-Converts existing book/clothing fields to attributes['book_details']/attributes['clothing_details']
+Converts existing Product/clothing fields to attributes['book_details']/attributes['clothing_details']
 """
 
 from django.core.management.base import BaseCommand
-from store.models import Book
+from store.models import Product
 
 
 class Command(BaseCommand):
@@ -13,14 +13,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Starting product attributes migration...")
         
-        books = Book.objects.all()
+        products = Product.objects.all()
         migrated_count = 0
         
         for product in books:
             attributes = product.attributes or {}
             
-            if product.product_type == 'book':
-                # Migrate book-specific fields
+            if product.product_type == 'Product':
+                # Migrate Product-specific fields
                 if not attributes.get('book_details'):
                     attributes['book_details'] = {
                         'author': product.author or '',
@@ -31,7 +31,7 @@ class Command(BaseCommand):
                     product.attributes = attributes
                     product.save()
                     migrated_count += 1
-                    self.stdout.write(f"  ✓ Migrated book: {product.title}")
+                    self.stdout.write(f"  ✓ Migrated Product: {product.title}")
             
             elif product.product_type == 'clothing':
                 # Migrate clothing-specific fields
@@ -52,3 +52,4 @@ class Command(BaseCommand):
                 f'\n✓ Successfully migrated {migrated_count} products to JSONField attributes'
             )
         )
+

@@ -55,15 +55,15 @@
             <div class="card-body">
                 {% for item in order_items %}
                 <div class="item">
-                    <a class="cover" href="{% url 'detail_redirect' book_id=item.book.id %}" aria-label="View {{ item.book.title }} details">
-                        {% if item.book.cover_image %}
-                        <img src="{{ item.book.cover_image }}" alt="{{ item.book.title }} cover">
+                    <a class="cover" href="{% url 'detail_redirect' book_id=item.product.id %}" aria-label="View {{ item.product.title }} details">
+                        {% if item.product.cover_image %}
+                        <img src="{{ item.product.cover_image }}" alt="{{ item.product.title }} cover">
                         {% else %}
                         <span>📘</span>
                         {% endif %}
                     </a>
                     <div>
-                        <p class="title">{{ item.book.title }}</p>
+                        <p class="title">{{ item.product.title }}</p>
                         <div class="meta">Unit price: ${{ item.price|floatformat:2 }} | Qty: {{ item.quantity }}</div>
                     </div>
                     <div class="price">${{ item.line_total|floatformat:2 }}</div>

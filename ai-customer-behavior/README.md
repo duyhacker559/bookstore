@@ -21,11 +21,9 @@ This folder contains implementation guides and execution logs for 5 deliverables
 4. building/04_deploy_integration_ecommerce.md
 5. building/05_ai_chatbot_product_recommendation.md
 
-## Suggested new services
+## Current AI service
 
-- behavior-service (FastAPI): online scoring + recommendation API
-- rag-service (FastAPI): retrieval + answer generation API
-- vector-db (Qdrant or pgvector): document embeddings store
+- ai-service (FastAPI): unified recommendation + chat API
 
 ## Existing system integration points
 
@@ -41,7 +39,7 @@ This folder contains implementation guides and execution logs for 5 deliverables
 docker compose up -d --build
 
 # Later after adding AI services, run full stack
-docker compose up -d --build web payment-service shipping-service notification-service behavior-service rag-service ai-behavior-service
+docker compose up -d --build web payment-service shipping-service notification-service ai-service
 ```
 
 ## Definition of done
@@ -56,18 +54,16 @@ docker compose up -d --build web payment-service shipping-service notification-s
 
 Implemented artifacts in this repository:
 
-- New service: behavior-service (port 5004)
-- New service: rag-service (port 5005)
-- New service: ai-behavior-service (port 5006)
-- Django clients: store/behavior_client.py and store/rag_client.py
+- New service: ai-service (port 5006)
+- Django client: store/ai_service_client.py
 - Django API gateway endpoints:
 	- POST /api/ai/recommend/
 	- POST /api/ai/chat/
 - docker-compose integrated with web environment variables and health checks
 
-## AI Behavior Service (new)
+## Legacy note
 
-Location: ai-customer-behavior/service
+The previous behavior-service, rag-service, and ai-behavior-service have been removed.
 
 Core capabilities:
 - Persist user behavior events in SQLite (click, search, addCart, checkout, purchase)
@@ -77,35 +73,11 @@ Core capabilities:
 - RAG retrieval from the knowledge graph for recommendations and analysis
 - Gemini-based chatbot endpoint for customer consulting
 
-Main API endpoints:
-- POST /api/v1/ai/events
-- POST /api/v1/ai/events/batch
-- POST /api/v1/ai/train
-- POST /api/v1/ai/graph/rebuild
-- POST /api/v1/ai/rag/query
-- POST /api/v1/ai/recommend
-- POST /api/v1/ai/trends
-- GET /api/v1/ai/alerts
-- POST /api/v1/ai/chat
+This legacy service has been replaced by the unified ai-service.
 
-Monolith gateway endpoints (Django):
-- POST /api/ai/advanced/events/
-- POST /api/ai/advanced/train/
-- POST /api/ai/advanced/recommend/
-- POST /api/ai/advanced/chat/
-- GET /api/ai/advanced/trends/
-- GET /api/ai/advanced/alerts/
-
-Customer/staff widget endpoints:
-- POST /customer/ai/chat/
-- POST /customer/ai/recommend/
-- POST /customer/ai/train/ (staff only)
-
-Feature flag:
-- AI_ADVANCED_WIDGET_ENABLED=True to route customer widget to ai-behavior-service
-
-Auth:
-- Authorization: Bearer ai-behavior-service-token-123
+Current endpoints are provided by ai-service:
+- POST /api/v1/recommend
+- POST /api/v1/chatbot
 
 Generated DOCX outputs:
 
@@ -121,7 +93,7 @@ Generated DOCX outputs:
 1. Start services:
 
 ```bash
-docker compose up -d --build web behavior-service rag-service ai-behavior-service
+docker compose up -d --build web ai-service
 ```
 
 2. Open web app and login:

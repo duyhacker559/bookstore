@@ -1,6 +1,6 @@
 from django.db import models
 from store.models.customer.customer import Customer
-from store.models.product.product import Book
+from store.models.product.product import Product
 
 class Rating(models.Model):
     SCORE_CHOICES = [
@@ -12,7 +12,7 @@ class Rating(models.Model):
     ]
     
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='ratings_given')
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='ratings')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='ratings')
     score = models.IntegerField(choices=SCORE_CHOICES, default=5)
     is_hidden = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -23,25 +23,27 @@ class Rating(models.Model):
         app_label = 'store'
 
     def __str__(self):
-        return f"Rating {self.score} for {self.book.title} by {self.customer.name}"
+        return f"Rating {self.score} for {self.product.title} by {self.customer.name}"
 
 
 class Comment(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='comments_made')
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='comments')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
     rating = models.ForeignKey(Rating, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)
     title = models.CharField(max_length=200)
     content = models.TextField()
     is_hidden = models.BooleanField(default=False)
-    is_verified_purchase = models.BooleanField(default=False)  # True if customer bought the book
+    is_verified_purchase = models.BooleanField(default=False)  # True if customer bought the product
     helpful_count = models.PositiveIntegerField(default=0)  # "Helpful" votes
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        # Multiple comments per customer per book are allowed.
+        # Multiple comments per customer per product are allowed.
         ordering = ['-helpful_count', '-created_at']
         app_label = 'store'
 
     def __str__(self):
-        return f"Comment by {self.customer.name} on {self.book.title}"
+        return f"Comment by {self.customer.name} on {self.product.title}"
+
+

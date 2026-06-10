@@ -1,0 +1,74 @@
+# Git and version control
+.git
+.gitignore
+.github
+
+# Development and testing
+.vscode
+.pytest_cache
+.coverage
+.mypy_cache
+*.sqlite3
+db.sqlite3
+*.log
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Cache and compiled Python
+__pycache__
+*.py[cod]
+*$py.class
+*.egg-info
+.eggs
+dist
+build
+
+# Large documentation/analysis folders (not needed at runtime)
+_github_not_needed
+diagrams
+tools
+ANALYSIS_SUMMARY.md
+ARCHITECTURE.md
+ARCHITECTURE_ANALYSIS.md
+DEPENDENCY_MAP.md
+MICROSERVICES_IMPLEMENTATION.md
+MICROSERVICES_PLAN.md
+
+# Test files
+test_*.py
+*_test.py
+*.test.js
+
+# Generated reports
+*.docx
+*.pdf
+TECHNICAL_REPORT_*.docx
+RELEASE_READINESS_REPORT.md
+
+# OS specific
+.DS_Store
+Thumbs.db
+.windows
+.macos
+
+# Temporary files
+*.tmp
+*.swp
+*~
+~$*
+
+# Node modules (if any JS services)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Docker files (don't copy into container)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# README and documentation (optional, keep or remove based on needs)
+*.md

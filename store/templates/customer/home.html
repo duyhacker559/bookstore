@@ -678,7 +678,7 @@
                     {% for review in reviewed_books %}
                     <div class="order-card">
                         <div class="order-header">
-                            <span class="order-id">{{ review.book.title }}</span>
+                            <span class="order-id">{{ review.product.title }}</span>
                             {% if review.rating %}
                             <span class="order-status status-delivered">{{ review.rating.score }}★</span>
                             {% endif %}
@@ -694,8 +694,8 @@
                             </div>
                         </div>
                         <div class="order-actions">
-                            <a href="/{% firstof review.book.id 0 %}/" class="order-btn btn-view">Product Detail</a>
-                            <a href="/{% firstof review.book.id 0 %}/reviews/" class="order-btn btn-track">View Reviews</a>
+                            <a href="/{% firstof review.product.id 0 %}/" class="order-btn btn-view">Product Detail</a>
+                            <a href="/{% firstof review.product.id 0 %}/reviews/" class="order-btn btn-track">View Reviews</a>
                         </div>
                     </div>
                     {% empty %}

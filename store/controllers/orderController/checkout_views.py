@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.contrib import messages
-from store.models.product.product import Book
+from store.models.product.product import Product
 from store.models.cart.cart import Cart, CartItem
 from store.models.customer.customer import Customer
 from store.models.order.order import Order
@@ -58,8 +58,8 @@ def _options_as_map(options_list):
 
 def _calculate_cart_totals(cart):
     """Return cart totals used by page and AJAX quantity updates."""
-    items = cart.items.select_related('book')
-    cart_total = sum(Decimal(str(item.book.price)) * item.quantity for item in items)
+    items = cart.items.select_related('product')
+    cart_total = sum(Decimal(str(item.product.price)) * item.quantity for item in items)
     tax = cart_total * Decimal('0.08')
     total = cart_total + tax
     return cart_total, tax, total, items.count()
@@ -67,7 +67,7 @@ def _calculate_cart_totals(cart):
 
 def add_to_cart(request, book_id):
     """Add book to cart - redirect to login if not authenticated"""
-    book = get_object_or_404(Book, id=book_id)
+    book = get_object_or_404(Product, id=book_id)
     
     if not request.user.is_authenticated:
         messages.info(request, 'Please log in to add items to cart')
@@ -89,7 +89,7 @@ def add_to_cart(request, book_id):
             quantity = 1
     
     cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item, created = CartItem.objects.get_or_create(cart=cart, book=book)
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, product=book)
     
     if book.stock <= 0:
         messages.error(request, f'"{book.title}" is currently out of stock.')
@@ -114,7 +114,7 @@ def remove_from_cart(request, book_id):
     
     cart = Cart.objects.filter(user=request.user).first()
     if cart:
-        CartItem.objects.filter(cart=cart, book_id=book_id).delete()
+        CartItem.objects.filter(cart=cart, product_id=book_id).delete()
         messages.success(request, 'Item removed from cart')
     
     return redirect('cart')
@@ -124,14 +124,14 @@ def cart_view(request):
     """Display shopping cart - can be viewed by guest"""
     if request.user.is_authenticated:
         cart, created = Cart.objects.get_or_create(user=request.user)
-        items = cart.items.select_related("book").prefetch_related("book__images")
+        items = cart.items.select_related("product").prefetch_related("product__images")
     else:
         items = []
 
     for item in items:
-        cover = item.book.images.filter(is_cover=True).first() or item.book.images.first()
-        item.book.cover_image = cover.image.url if cover and cover.image else ""
-        item.total_price = Decimal(str(item.book.price)) * item.quantity
+        cover = item.product.images.filter(is_cover=True).first() or item.product.images.first()
+        item.product.cover_image = cover.image.url if cover and cover.image else ""
+        item.total_price = Decimal(str(item.product.price)) * item.quantity
     
     if request.user.is_authenticated:
         cart_total, tax, total, _ = _calculate_cart_totals(cart)
@@ -171,7 +171,7 @@ def update_cart_quantity(request, book_id):
         messages.error(request, 'Cart not found.')
         return redirect('cart')
 
-    cart_item = CartItem.objects.filter(cart=cart, book_id=book_id).select_related('book').first()
+    cart_item = CartItem.objects.filter(cart=cart, product_id=book_id).select_related('product').first()
     if not cart_item:
         if is_ajax:
             return _json_error('Cart item not found.', status=404)
@@ -192,7 +192,7 @@ def update_cart_quantity(request, book_id):
         requested_quantity = cart_item.quantity - 1
 
     if requested_quantity <= 0:
-        book_title = cart_item.book.title
+        book_title = cart_item.product.title
         cart_item.delete()
         cart_total, tax, total, item_count = _calculate_cart_totals(cart)
 
@@ -210,9 +210,9 @@ def update_cart_quantity(request, book_id):
         messages.success(request, f'"{book_title}" removed from cart.')
         return redirect('cart')
 
-    available_stock = max(cart_item.book.stock, 0)
+    available_stock = max(cart_item.product.stock, 0)
     if available_stock <= 0:
-        book_title = cart_item.book.title
+        book_title = cart_item.product.title
         cart_item.delete()
         cart_total, tax, total, item_count = _calculate_cart_totals(cart)
 
@@ -227,7 +227,7 @@ def update_cart_quantity(request, book_id):
                 'item_count': item_count,
             })
 
-        messages.warning(request, f'"{cart_item.book.title}" is out of stock and was removed from your cart.')
+        messages.warning(request, f'"{cart_item.product.title}" is out of stock and was removed from your cart.')
         return redirect('cart')
 
     final_quantity = min(requested_quantity, available_stock)
@@ -241,16 +241,16 @@ def update_cart_quantity(request, book_id):
             return JsonResponse({
                 'success': True,
                 'removed': False,
-                'message': f'Only {available_stock} copy(ies) of "{cart_item.book.title}" are available.',
+                'message': f'Only {available_stock} copy(ies) of "{cart_item.product.title}" are available.',
                 'quantity': final_quantity,
                 'stock': available_stock,
-                'line_total': f'{(Decimal(str(cart_item.book.price)) * final_quantity):.2f}',
+                'line_total': f'{(Decimal(str(cart_item.product.price)) * final_quantity):.2f}',
                 'cart_total': f'{cart_total:.2f}',
                 'tax': f'{tax:.2f}',
                 'total': f'{total:.2f}',
                 'item_count': item_count,
             })
-        messages.warning(request, f'Only {available_stock} copy(ies) of "{cart_item.book.title}" are available.')
+        messages.warning(request, f'Only {available_stock} copy(ies) of "{cart_item.product.title}" are available.')
     elif is_ajax:
         return JsonResponse({
             'success': True,
@@ -258,7 +258,7 @@ def update_cart_quantity(request, book_id):
             'message': 'Quantity updated.',
             'quantity': final_quantity,
             'stock': available_stock,
-            'line_total': f'{(Decimal(str(cart_item.book.price)) * final_quantity):.2f}',
+            'line_total': f'{(Decimal(str(cart_item.product.price)) * final_quantity):.2f}',
             'cart_total': f'{cart_total:.2f}',
             'tax': f'{tax:.2f}',
             'total': f'{total:.2f}',
@@ -301,7 +301,7 @@ def checkout(request):
         
         # Calculate totals
         cart_items = cart.items.all()
-        subtotal = sum(Decimal(str(item.book.price)) * item.quantity for item in cart_items)
+        subtotal = sum(Decimal(str(item.product.price)) * item.quantity for item in cart_items)
         tax = subtotal * Decimal('0.08')
 
         # Calculate shipping fee (prefer external Shipping Service)
@@ -339,13 +339,13 @@ def checkout(request):
         for item in cart_items:
             OrderItem.objects.create(
                 order=order,
-                book=item.book,
+                product=item.product,
                 quantity=item.quantity,
-                price=item.book.price
+                price=item.product.price
             )
-            # Reduce book stock by ordered quantity
-            item.book.stock -= item.quantity
-            item.book.save()
+            # Reduce product stock by ordered quantity
+            item.product.stock -= item.quantity
+            item.product.save()
         
         # Create shipment in external Shipping Service (and mirror locally)
         shipment_method_name = ShippingService.SHIPPING_METHODS.get(shipping_method, {}).get('name', shipping_method)
@@ -392,7 +392,7 @@ def checkout(request):
     
     # GET request - show checkout form
     items = cart.items.all()
-    subtotal = sum(Decimal(str(item.book.price)) * item.quantity for item in items)
+    subtotal = sum(Decimal(str(item.product.price)) * item.quantity for item in items)
     tax = subtotal * Decimal('0.08')
     total = subtotal + tax
     
@@ -561,13 +561,13 @@ def order_success(request, order_id):
     payment = Payment.objects.filter(order=order).first()
     shipment = Shipment.objects.filter(order=order).first()
 
-    order_items = order.items.select_related('book').prefetch_related('book__images')
+    order_items = order.items.select_related('product').prefetch_related('product__images')
     subtotal = Decimal('0.00')
     total_units = 0
 
     for item in order_items:
-        cover = item.book.images.filter(is_cover=True).first() or item.book.images.first()
-        item.book.cover_image = cover.image.url if cover and cover.image else ''
+        cover = item.product.images.filter(is_cover=True).first() or item.product.images.first()
+        item.product.cover_image = cover.image.url if cover and cover.image else ''
         item.line_total = Decimal(str(item.price)) * item.quantity
         subtotal += item.line_total
         total_units += item.quantity
@@ -620,3 +620,4 @@ def track_order(request, order_id):
         'shipment': shipment,
         'timeline': timeline,
     })
+

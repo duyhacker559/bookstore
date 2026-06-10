@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='book',
             name='author_fk',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='books_by_fk', to='store.author'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="products_by_fk", to="store.author"),
         ),
         migrations.AlterField(
             model_name='book',
@@ -29,6 +29,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='book',
             name='category_fk',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='books_by_fk', to='store.category'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="products_by_fk", to="store.category"),
         ),
     ]
+

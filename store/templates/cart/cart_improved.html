@@ -308,28 +308,28 @@
         <!-- Cart Items -->
         <div class="cart-items-wrap">
             {% for item in items %}
-            <div class="cart-item" data-book-id="{{ item.book.id }}">
-                <a href="/{{ item.book.id }}/" class="item-cover" aria-label="{{ item.book.title }}">
-                    {% if item.book.cover_image %}
-                    <img src="{{ item.book.cover_image }}" alt="{{ item.book.title }} cover">
+            <div class="cart-item" data-book-id="{{ item.product.id }}">
+                <a href="/{{ item.product.id }}/" class="item-cover" aria-label="{{ item.product.title }}">
+                    {% if item.product.cover_image %}
+                    <img src="{{ item.product.cover_image }}" alt="{{ item.product.title }} cover">
                     {% else %}
                     <span>📘</span>
                     {% endif %}
                 </a>
 
                 <div>
-                    <h3 class="item-title">{{ item.book.title }}</h3>
-                    <p class="item-author">{{ item.book.creator_label }}: {{ item.book.creator_display }}</p>
+                    <h3 class="item-title">{{ item.product.title }}</h3>
+                    <p class="item-author">{{ item.product.creator_label }}: {{ item.product.creator_display }}</p>
                     <div class="item-meta">
-                        <span class="unit-price">${{ item.book.price|floatformat:2 }} each</span>
+                        <span class="unit-price">${{ item.product.price|floatformat:2 }} each</span>
                         <span class="qty-chip" data-role="qty-chip">Qty: {{ item.quantity }}</span>
-                        <span class="stock-pill" data-role="stock-pill">Stock: {{ item.book.stock }}</span>
+                        <span class="stock-pill" data-role="stock-pill">Stock: {{ item.product.stock }}</span>
                     </div>
 
-                    <form method="POST" action="{% url 'update_cart_quantity' item.book.id %}" class="qty-controls">
+                    <form method="POST" action="{% url 'update_cart_quantity' item.product.id %}" class="qty-controls">
                         {% csrf_token %}
                         <button type="submit" class="qty-btn" name="action" value="decrease" aria-label="Decrease quantity">−</button>
-                        <input class="qty-input" type="number" name="quantity" min="1" max="{{ item.book.stock }}" value="{{ item.quantity }}">
+                        <input class="qty-input" type="number" name="quantity" min="1" max="{{ item.product.stock }}" value="{{ item.quantity }}">
                         <button type="submit" class="qty-btn" name="action" value="increase" aria-label="Increase quantity">+</button>
                     </form>
                     <div class="qty-feedback" data-role="qty-feedback"></div>
@@ -337,7 +337,7 @@
 
                 <div class="cart-item-right" style="text-align: right;">
                     <div class="line-total" data-role="line-total">${{ item.total_price|floatformat:2 }}</div>
-                    <form method="POST" action="{% url 'remove_from_cart' item.book.id %}" style="margin: 8px 0 0;">
+                    <form method="POST" action="{% url 'remove_from_cart' item.product.id %}" style="margin: 8px 0 0;">
                         {% csrf_token %}
                         <button type="submit" class="remove-btn">🗑 Remove</button>
                     </form>

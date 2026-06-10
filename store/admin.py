@@ -1,7 +1,7 @@
 from django.contrib import admin
 from store.models import (
-    Book, Customer, Staff, Order, OrderItem, Payment, Shipment, Cart, Recommendation,
-    Author, Category, BookDetail, BookImage, Inventory, UserProfile, Rating, Comment,
+    Product, Customer, Staff, Order, OrderItem, Payment, Shipment, Cart, Recommendation,
+    Author, Category, ProductDetail, ProductImage, Inventory, UserProfile, Rating, Comment,
     UserNotification, InboxMessage, InboxReply, AIChatSession, AIChatMessage
 )
 
@@ -9,8 +9,8 @@ class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
 
-class BookImageInline(admin.TabularInline):
-    model = BookImage
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
     extra = 1
 
 class CommentInline(admin.TabularInline):
@@ -18,8 +18,8 @@ class CommentInline(admin.TabularInline):
     extra = 0
     fields = ('customer', 'title', 'content', 'is_verified_purchase', 'helpful_count')
 
-class BookAdmin(admin.ModelAdmin):
-    inlines = [BookImageInline, CommentInline]
+class ProductAdmin(admin.ModelAdmin):
+    inlines = [ProductImageInline, CommentInline]
     list_display = ('id', 'title', 'author', 'price', 'stock', 'rating', 'review_count', 'created_at')
     search_fields = ('title', 'author', 'categories_m2m__name')
     list_filter = ('categories_m2m', 'rating', 'created_at')
@@ -39,7 +39,7 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 class InventoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'book', 'quantity')
+    list_display = ('id', 'product', 'quantity')
     list_filter = ('quantity',)
 
 class UserProfileAdmin(admin.ModelAdmin):
@@ -55,15 +55,15 @@ class ShipmentAdmin(admin.ModelAdmin):
     list_filter = ('status', 'method_name')
 
 class RatingAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'book', 'score', 'created_at')
+    list_display = ('id', 'customer', 'product', 'score', 'created_at')
     list_filter = ('score', 'created_at')
-    search_fields = ('customer__name', 'book__title')
+    search_fields = ('customer__name', 'product__title')
     readonly_fields = ('created_at', 'updated_at')
 
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'book', 'title', 'is_verified_purchase', 'helpful_count', 'created_at')
+    list_display = ('id', 'customer', 'product', 'title', 'is_verified_purchase', 'helpful_count', 'created_at')
     list_filter = ('is_verified_purchase', 'created_at', 'helpful_count')
-    search_fields = ('customer__name', 'book__title', 'title', 'content')
+    search_fields = ('customer__name', 'product__title', 'title', 'content')
     readonly_fields = ('created_at', 'updated_at')
 
 
@@ -74,7 +74,7 @@ class UserNotificationAdmin(admin.ModelAdmin):
 
 
 class InboxMessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'book', 'subject', 'status', 'created_at')
+    list_display = ('id', 'customer', 'product', 'subject', 'status', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('customer__name', 'subject', 'content', 'staff_note')
 
@@ -96,7 +96,7 @@ class AIChatMessageAdmin(admin.ModelAdmin):
     list_filter = ('role', 'message_type', 'created_at')
     search_fields = ('session__session_id', 'content')
 
-admin.site.register(Book, BookAdmin)
+admin.site.register(Product, ProductAdmin)
 admin.site.register(Customer)
 admin.site.register(Staff)
 admin.site.register(Order, OrderAdmin)
@@ -106,8 +106,8 @@ admin.site.register(Cart)
 admin.site.register(Recommendation)
 admin.site.register(Author, AuthorAdmin)
 admin.site.register(Category, CategoryAdmin)
-admin.site.register(BookDetail)
-admin.site.register(BookImage)
+admin.site.register(ProductDetail)
+admin.site.register(ProductImage)
 admin.site.register(Inventory, InventoryAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(Rating, RatingAdmin)

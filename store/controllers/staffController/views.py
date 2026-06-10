@@ -12,13 +12,14 @@ from django.views.decorators.http import require_POST
 from datetime import timedelta, datetime
 
 from store.events import publish_event
-from store.models import Shipment, Staff, Book, Order, OrderItem, Category, Rating, Comment, InboxMessage, InboxReply
+from store.models import Shipment, Staff, Product, Order, OrderItem, Category, Rating, Comment, InboxMessage, InboxReply
 from store.models.communication import UserNotification
-from store.models.product.product_image import BookImage
+from store.models.product.attribute_manager import ProductAttributeManager
+from store.models.product.product_image import ProductImage
 from store.shipping_client import ShippingClient, ShippingProcessingError, ShippingServiceUnavailable
-from store.ai_behavior_client import AIBehaviorClient, AIBehaviorServiceError, AIBehaviorServiceUnavailable
 from store.services.notification_service import create_user_notification
 from store.services.clothing_service import ClothingService
+from store.ai_behavior_client import AIBehaviorClient, AIBehaviorError, AIBehaviorUnavailable
 
 
 ALLOWED_SHIPMENT_STATUSES = {
@@ -68,6 +69,28 @@ def _sync_legacy_product_categories(book, categories):
     book.category = primary_category.name if primary_category else ""
 
 
+def _allowed_product_types():
+    return {choice[0] for choice in Product.PRODUCT_TYPE_CHOICES}
+
+
+def _collect_details_from_request(request, product_type):
+    _, defaults = ProductAttributeManager.PRODUCT_DETAIL_KEYS.get(str(product_type), ("", {}))
+    details = {}
+    for key, default in defaults.items():
+        raw = request.POST.get(f"detail_{key}", "")
+        if isinstance(default, bool):
+            details[key] = str(raw).strip().lower() in {"1", "true", "yes", "on"}
+        elif isinstance(default, int):
+            try:
+                details[key] = int(raw)
+            except (TypeError, ValueError):
+                details[key] = default
+        else:
+            value = str(raw).strip()
+            details[key] = value if value else default
+    return details
+
+
 def is_staff_user(user):
     """Check if user is staff (has Staff model record or is Django staff)."""
     if not user.is_authenticated:
@@ -86,8 +109,8 @@ def staff_home(request):
     shipped_count = shipments_qs.filter(status__iexact="Shipped").count()
     delivered_count = shipments_qs.filter(status__iexact="Delivered").count()
 
-    total_books = Book.objects.count()
-    low_stock = Book.objects.filter(stock__lte=5).count()
+    total_books = Product.objects.count()
+    low_stock = Product.objects.filter(stock__lte=5).count()
     return render(
         request,
         "staff/home.html",
@@ -113,20 +136,22 @@ def staff_ai_train_model(request):
     except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
-    min_events = payload.get("min_events", 50)
     try:
-        min_events = int(min_events)
+        min_events = int(payload.get("min_events", 50))
     except (TypeError, ValueError):
-        return JsonResponse({"error": "Invalid min_events"}, status=400)
+        min_events = 50
 
     client = AIBehaviorClient()
     try:
         result = client.train(min_events=min_events)
-        return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
+    except AIBehaviorUnavailable as exc:
         return JsonResponse({"error": str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
+    except AIBehaviorError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
+
+    if not isinstance(result, dict):
+        result = {"status": "completed", "result": result}
+    return JsonResponse(result)
 
 
 @login_required(login_url="login")
@@ -212,7 +237,7 @@ def update_shipment_status(request, shipment_id):
 @login_required(login_url="login")
 @user_passes_test(is_staff_user, login_url="login")
 def staff_products(request):
-    books = Book.objects.prefetch_related("images", "categories_m2m").all()
+    books = Product.objects.prefetch_related("images", "categories_m2m").all()
     query = request.GET.get("q", "").strip()
     if query:
         books = books.filter(
@@ -225,7 +250,7 @@ def staff_products(request):
         )
 
     product_type = request.GET.get("product_type", "").strip().lower()
-    if product_type in {Book.PRODUCT_TYPE_BOOK, Book.PRODUCT_TYPE_CLOTHING}:
+    if product_type in _allowed_product_types():
         books = books.filter(product_type=product_type)
     
     # Price range filter
@@ -272,8 +297,8 @@ def staff_products(request):
     
     # Get categories for filter dropdown scoped to selected product type
     categories = Category.objects.order_by("name")
-    if product_type in {Book.PRODUCT_TYPE_BOOK, Book.PRODUCT_TYPE_CLOTHING}:
-        categories = categories.filter(books_multi__product_type=product_type).distinct()
+    if product_type in _allowed_product_types():
+        categories = categories.filter(products_multi__product_type=product_type).distinct()
     
     # Get price range stats
     price_stats = books.aggregate(min_price=Min("price"), max_price=Max("price"))
@@ -283,6 +308,7 @@ def staff_products(request):
         cover = book.images.filter(is_cover=True).first() or book.images.first()
         book.cover_image = cover.image.url if cover and cover.image else ""
         book.category_ids_csv = ",".join(str(category_obj.id) for category_obj in book.categories_m2m.all())
+        book.attributes_json = json.dumps(book.attributes or {}, ensure_ascii=True)
     
     return render(request, "staff/books.html", {
         "books": book_list,
@@ -296,8 +322,8 @@ def staff_products(request):
         "categories": categories,
         "min_price": price_stats.get("min_price") or 0,
         "max_price": price_stats.get("max_price") or 100,
-        "total_books": Book.objects.count(),
-        "low_stock": Book.objects.filter(stock__lte=5).count(),
+        "total_books": Product.objects.count(),
+        "low_stock": Product.objects.filter(stock__lte=5).count(),
     })
 
 
@@ -306,7 +332,7 @@ def staff_products(request):
 def staff_add_product(request):
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
-        product_type = request.POST.get("product_type", Book.PRODUCT_TYPE_BOOK).strip().lower()
+        product_type = request.POST.get("product_type", Product.PRODUCT_TYPE_BOOK).strip().lower()
         author = request.POST.get("author", "").strip()
         brand = request.POST.get("brand", "").strip()
         price = request.POST.get("price", "0").strip()
@@ -316,20 +342,46 @@ def staff_add_product(request):
         material = request.POST.get("material", "").strip()
         gender_target = request.POST.get("gender_target", "").strip()
         categories = _resolve_categories_from_request(request)
-        if product_type not in {Book.PRODUCT_TYPE_BOOK, Book.PRODUCT_TYPE_CLOTHING}:
-            product_type = Book.PRODUCT_TYPE_BOOK
+        if product_type not in _allowed_product_types():
+            product_type = Product.PRODUCT_TYPE_BOOK
+
+        details = _collect_details_from_request(request, product_type)
+        if product_type == Product.PRODUCT_TYPE_BOOK:
+            detail_author = request.POST.get("detail_author", "").strip()
+            if detail_author:
+                author = detail_author
+        if product_type in {
+            Product.PRODUCT_TYPE_CLOTHING,
+            Product.PRODUCT_TYPE_ELECTRONICS,
+            Product.PRODUCT_TYPE_MOBILE,
+            Product.PRODUCT_TYPE_HOME_APPLIANCE,
+            Product.PRODUCT_TYPE_BEAUTY,
+            Product.PRODUCT_TYPE_FOOD,
+            Product.PRODUCT_TYPE_SPORTS,
+            Product.PRODUCT_TYPE_TOYS,
+        }:
+            detail_brand = request.POST.get("detail_brand", "").strip()
+            if detail_brand:
+                brand = detail_brand
+        if product_type == Product.PRODUCT_TYPE_CLOTHING:
+            size_options = details.get("sizes", size_options)
+            material = details.get("material", material)
+            gender_target = details.get("gender_target", gender_target)
+        elif product_type == Product.PRODUCT_TYPE_SPORTS:
+            material = details.get("material", material)
+            gender_target = details.get("gender_target", gender_target)
 
         if not title:
             messages.error(request, "Title is required.")
             return redirect("staff_products")
-        if product_type == Book.PRODUCT_TYPE_BOOK and not author:
+        if product_type == Product.PRODUCT_TYPE_BOOK and not author:
             messages.error(request, "Author is required for books.")
             return redirect("staff_products")
-        if product_type == Book.PRODUCT_TYPE_CLOTHING and not brand:
+        if product_type == Product.PRODUCT_TYPE_CLOTHING and not brand:
             messages.error(request, "Brand is required for clothing products.")
             return redirect("staff_products")
         try:
-            book = Book.objects.create(
+            book = Product.objects.create(
                 title=title,
                 product_type=product_type,
                 author=author,
@@ -343,10 +395,11 @@ def staff_add_product(request):
             )
             ClothingService.apply_clothing_defaults(book)
             _sync_legacy_product_categories(book, categories)
-            book.save(update_fields=["author", "size_options", "material", "gender_target", "category", "category_fk"])
+            book.attributes = ProductAttributeManager.set_details_by_product_type(product_type, book.attributes or {}, details)
+            book.save(update_fields=["author", "brand", "size_options", "material", "gender_target", "attributes", "category", "category_fk"])
             book.categories_m2m.set(categories)
             if request.FILES.get("image"):
-                BookImage.objects.create(book=book, image=request.FILES["image"], is_cover=True)
+                ProductImage.objects.create(book=book, image=request.FILES["image"], is_cover=True)
             messages.success(request, f"Product \u201c{title}\u201d added successfully.")
         except Exception as e:
             messages.error(request, f"Could not add product: {e}")
@@ -357,36 +410,62 @@ def staff_add_product(request):
 @login_required(login_url="login")
 @user_passes_test(is_staff_user, login_url="login")
 def staff_edit_product(request, book_id):
-    book = get_object_or_404(Book.objects.prefetch_related("categories_m2m"), id=book_id)
+    book = get_object_or_404(Product.objects.prefetch_related("categories_m2m"), id=book_id)
     if request.method == "POST":
         categories = _resolve_categories_from_request(request)
         book.title = request.POST.get("title", book.title).strip()
         product_type = request.POST.get("product_type", book.product_type).strip().lower()
-        if product_type in {Book.PRODUCT_TYPE_BOOK, Book.PRODUCT_TYPE_CLOTHING}:
+        if product_type in _allowed_product_types():
             book.product_type = product_type
+        details = _collect_details_from_request(request, book.product_type)
         book.author = request.POST.get("author", book.author).strip()
         book.brand = request.POST.get("brand", book.brand).strip()
+        if book.product_type == Product.PRODUCT_TYPE_BOOK:
+            detail_author = request.POST.get("detail_author", "").strip()
+            if detail_author:
+                book.author = detail_author
+        if book.product_type in {
+            Product.PRODUCT_TYPE_CLOTHING,
+            Product.PRODUCT_TYPE_ELECTRONICS,
+            Product.PRODUCT_TYPE_MOBILE,
+            Product.PRODUCT_TYPE_HOME_APPLIANCE,
+            Product.PRODUCT_TYPE_BEAUTY,
+            Product.PRODUCT_TYPE_FOOD,
+            Product.PRODUCT_TYPE_SPORTS,
+            Product.PRODUCT_TYPE_TOYS,
+        }:
+            detail_brand = request.POST.get("detail_brand", "").strip()
+            if detail_brand:
+                book.brand = detail_brand
         book.price = request.POST.get("price", book.price)
         book.stock = int(request.POST.get("stock", book.stock))
         book.description = request.POST.get("description", book.description).strip()
         book.size_options = request.POST.get("size_options", book.size_options).strip()
         book.material = request.POST.get("material", book.material).strip()
         book.gender_target = request.POST.get("gender_target", book.gender_target).strip()
+        if book.product_type == Product.PRODUCT_TYPE_CLOTHING:
+            book.size_options = details.get("sizes", book.size_options)
+            book.material = details.get("material", book.material)
+            book.gender_target = details.get("gender_target", book.gender_target)
+        elif book.product_type == Product.PRODUCT_TYPE_SPORTS:
+            book.material = details.get("material", book.material)
+            book.gender_target = details.get("gender_target", book.gender_target)
 
-        if book.product_type == Book.PRODUCT_TYPE_BOOK and not book.author:
+        if book.product_type == Product.PRODUCT_TYPE_BOOK and not book.author:
             messages.error(request, "Author is required for books.")
             return redirect("staff_products")
-        if book.product_type == Book.PRODUCT_TYPE_CLOTHING and not book.brand:
+        if book.product_type == Product.PRODUCT_TYPE_CLOTHING and not book.brand:
             messages.error(request, "Brand is required for clothing products.")
             return redirect("staff_products")
 
         ClothingService.apply_clothing_defaults(book)
         _sync_legacy_product_categories(book, categories)
+        book.attributes = ProductAttributeManager.set_details_by_product_type(book.product_type, book.attributes or {}, details)
         book.save()
         book.categories_m2m.set(categories)
         if request.FILES.get("image"):
-            BookImage.objects.filter(book=book, is_cover=True).delete()
-            BookImage.objects.create(book=book, image=request.FILES["image"], is_cover=True)
+            ProductImage.objects.filter(book=book, is_cover=True).delete()
+            ProductImage.objects.create(book=book, image=request.FILES["image"], is_cover=True)
         messages.success(request, f"Product \u201c{book.title}\u201d updated.")
         return redirect("staff_products")
     cover = book.images.filter(is_cover=True).first() or book.images.first()
@@ -398,7 +477,7 @@ def staff_edit_product(request, book_id):
 @user_passes_test(is_staff_user, login_url="login")
 def staff_delete_product(request, book_id):
     if request.method == "POST":
-        book = get_object_or_404(Book, id=book_id)
+        book = get_object_or_404(Product, id=book_id)
         title = book.title
         book.delete()
         messages.success(request, f"Product \u201c{title}\u201d deleted.")
@@ -407,9 +486,9 @@ def staff_delete_product(request, book_id):
 
 def _recalculate_product_feedback(book_ids):
     """Refresh denormalized rating/review_count values on books after moderation changes."""
-    for book in Book.objects.filter(id__in=book_ids):
-        avg_rating = Rating.objects.filter(book=book, is_hidden=False).aggregate(avg=Avg("score"))["avg"] or 0
-        review_count = Comment.objects.filter(book=book, is_hidden=False).count()
+    for book in Product.objects.filter(id__in=book_ids):
+        avg_rating = Rating.objects.filter(product=book, is_hidden=False).aggregate(avg=Avg("score"))["avg"] or 0
+        review_count = Comment.objects.filter(product=book, is_hidden=False).count()
         book.rating = round(float(avg_rating), 1)
         book.review_count = review_count
         book.save(update_fields=["rating", "review_count"])
@@ -440,7 +519,7 @@ def staff_feedback_moderation(request):
             messages.error(request, "Invalid moderation target.")
             return redirect("staff_feedback_moderation")
 
-        affected_book_ids = list(queryset.values_list("book_id", flat=True).distinct())
+        affected_book_ids = list(queryset.values_list("product_id", flat=True).distinct())
 
         affected_customers = list(queryset.values_list("customer", flat=True).distinct())
 
@@ -492,16 +571,16 @@ def staff_feedback_moderation(request):
     comment_visibility = request.GET.get("comment_visibility", "all").strip()
     verified = request.GET.get("verified", "all").strip()
 
-    ratings = Rating.objects.select_related("customer", "book").order_by("-updated_at")
-    comments = Comment.objects.select_related("customer", "book", "rating").order_by("-updated_at")
+    ratings = Rating.objects.select_related("customer", "product").order_by("-updated_at")
+    comments = Comment.objects.select_related("customer", "product", "rating").order_by("-updated_at")
 
     if query:
         ratings = ratings.filter(
-            Q(customer__name__icontains=query) | Q(book__title__icontains=query)
+            Q(customer__name__icontains=query) | Q(product__title__icontains=query)
         )
         comments = comments.filter(
             Q(customer__name__icontains=query)
-            | Q(book__title__icontains=query)
+            | Q(product__title__icontains=query)
             | Q(title__icontains=query)
             | Q(content__icontains=query)
         )
@@ -596,7 +675,7 @@ def staff_inbox(request):
 
     last_reply_qs = InboxReply.objects.filter(inbox_message=OuterRef("pk")).order_by("-created_at")
     messages_qs = (
-        InboxMessage.objects.select_related("customer", "book", "customer__user")
+        InboxMessage.objects.select_related("customer", "product", "customer__user")
         .annotate(
             reply_count=Count("replies"),
             last_reply_sender=Subquery(last_reply_qs.values("sender_type")[:1]),
@@ -616,7 +695,7 @@ def staff_inbox(request):
             Q(subject__icontains=query)
             | Q(content__icontains=query)
             | Q(customer__name__icontains=query)
-            | Q(book__title__icontains=query)
+            | Q(product__title__icontains=query)
         )
 
     status_counts = InboxMessage.objects.aggregate(
@@ -675,7 +754,7 @@ def staff_inbox(request):
 @user_passes_test(is_staff_user, login_url="login")
 def staff_inbox_thread(request, message_id):
     message_obj = get_object_or_404(
-        InboxMessage.objects.select_related("customer", "book").prefetch_related("replies"),
+        InboxMessage.objects.select_related("customer", "product").prefetch_related("replies"),
         id=message_id,
     )
 
@@ -747,7 +826,7 @@ def staff_inbox_updates(request):
 @user_passes_test(is_staff_user, login_url="login")
 def staff_inbox_thread_updates(request, message_id):
     message_obj = get_object_or_404(
-        InboxMessage.objects.select_related("customer", "book").prefetch_related("replies"),
+        InboxMessage.objects.select_related("customer", "product").prefetch_related("replies"),
         id=message_id,
     )
     latest_thread_reply = message_obj.replies.aggregate(last=Max("created_at"))["last"]
@@ -829,16 +908,16 @@ def staff_analytics(request):
     orders_delta = _delta_pct(period_order_count, prev_order_count)
     avg_delta = _delta_pct(avg_order_value, prev_avg_order_value)
 
-    total_books = Book.objects.count()
-    total_book_products = Book.objects.filter(product_type=Book.PRODUCT_TYPE_BOOK).count()
-    total_clothing_products = Book.objects.filter(product_type=Book.PRODUCT_TYPE_CLOTHING).count()
+    total_books = Product.objects.count()
+    total_book_products = Product.objects.filter(product_type=Product.PRODUCT_TYPE_BOOK).count()
+    total_clothing_products = Product.objects.filter(product_type=Product.PRODUCT_TYPE_CLOTHING).count()
     clothing_mix_pct = round((total_clothing_products / total_books) * 100, 1) if total_books else 0
-    low_stock_count = Book.objects.filter(stock__lte=5).count()
-    out_of_stock_count = Book.objects.filter(stock__lte=0).count()
-    healthy_stock_count = Book.objects.filter(stock__gt=5).count()
+    low_stock_count = Product.objects.filter(stock__lte=5).count()
+    out_of_stock_count = Product.objects.filter(stock__lte=0).count()
+    healthy_stock_count = Product.objects.filter(stock__gt=5).count()
     low_stock_pct = round((low_stock_count / total_books) * 100, 1) if total_books else 0
     out_of_stock_pct = round((out_of_stock_count / total_books) * 100, 1) if total_books else 0
-    catalog_updates_period = Book.objects.filter(updated_at__date__gte=period_start, updated_at__date__lte=period_end).count()
+    catalog_updates_period = Product.objects.filter(updated_at__date__gte=period_start, updated_at__date__lte=period_end).count()
 
     total_customers = all_orders.values("customer").distinct().count()
     inbox_unread_count = InboxMessage.objects.filter(status="unread").count()
@@ -940,7 +1019,7 @@ def staff_analytics(request):
 
     top_rated_products = list(
         ratings_period_qs
-        .values("book__id", "book__title", "book__product_type")
+        .values("product__id", "product__title", "product__product_type")
         .annotate(avg_score=Avg("score"), rating_count=Count("id"))
         .filter(rating_count__gte=2)
         .order_by("-avg_score", "-rating_count")[:8]
@@ -955,12 +1034,12 @@ def staff_analytics(request):
     top_products = (
         OrderItem.objects
         .filter(order__created_at__date__gte=period_start, order__created_at__date__lte=period_end)
-        .values("book__title", "book__author", "book__id")
+        .values("product__title", "product__author", "product__id")
         .annotate(units_sold=Sum("quantity"), revenue=Sum(F("quantity") * F("price")))
         .order_by("-units_sold")[:10]
     )
 
-    low_stock_products = Book.objects.filter(stock__lte=5).order_by("stock")[:10]
+    low_stock_products = Product.objects.filter(stock__lte=5).order_by("stock")[:10]
 
     daily_sales = []
     weekday_buckets = {
@@ -1004,8 +1083,8 @@ def staff_analytics(request):
 
     top_categories = list(
         OrderItem.objects
-        .filter(order__created_at__date__gte=period_start, order__created_at__date__lte=period_end, book__categories_m2m__isnull=False)
-        .values("book__categories_m2m__name")
+        .filter(order__created_at__date__gte=period_start, order__created_at__date__lte=period_end, product__categories_m2m__isnull=False)
+        .values("product__categories_m2m__name")
         .annotate(
             units=Sum("quantity"),
             revenue=Sum(F("quantity") * F("price")),
@@ -1040,11 +1119,11 @@ def staff_analytics(request):
             "revenue": float(m["revenue"]),
         } for m in monthly],
         "categories": [{
-            "label": c.get("book__categories_m2m__name") or "Uncategorized",
+            "label": c.get("product__categories_m2m__name") or "Uncategorized",
             "revenue": float(c.get("revenue") or 0),
         } for c in top_categories],
         "top_products": [{
-            "label": (b["book__title"] or "")[:22],
+            "label": (b["product__title"] or "")[:22],
             "units": int(b["units_sold"] or 0),
             "revenue": float(b["revenue"] or 0),
         } for b in top_products],
@@ -1161,3 +1240,4 @@ def staff_analytics(request):
         "start_date": period_start.isoformat(),
         "end_date": period_end.isoformat(),
     })
+

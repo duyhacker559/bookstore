@@ -77,7 +77,7 @@ class Command(BaseCommand):
         self.stdout.write(f'\nToken: {token.key}')
         self.stdout.write(f'\nUsage:')
         self.stdout.write(f'  curl -H "Authorization: Bearer {token.key}" \\')
-        self.stdout.write(f'       http://localhost:8000/api/books/')
+        self.stdout.write(f'       http://localhost:8000/api/products/')
 
     def create_service_token_cmd(self, service_name):
         """Create token for a microservice."""

@@ -1,6 +1,6 @@
 # store/services/recommendation.py
 
-from store.models import Book
+from store.models import Product
 
-def recommend_books(book, limit=4):
-    return Book.objects.exclude(id=book.id)[:limit]
+def recommend_books(product, limit=4):
+    return Product.objects.exclude(id=product.id)[:limit]

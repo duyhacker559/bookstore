@@ -38,7 +38,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='book',
             name='categories_m2m',
-            field=models.ManyToManyField(blank=True, related_name='books_multi', to='store.category'),
+            field=models.ManyToManyField(blank=True, related_name="products_multi", to="store.category"),
         ),
         migrations.RunPython(populate_book_categories_m2m, reverse_populate_book_categories_m2m),
     ]
+

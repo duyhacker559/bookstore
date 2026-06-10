@@ -2,12 +2,28 @@ from django.db import models
 from django.db.models import ForeignKey, CASCADE, SET_NULL
 
 
-class Book(models.Model):
+class Product(models.Model):
     PRODUCT_TYPE_BOOK = "book"
     PRODUCT_TYPE_CLOTHING = "clothing"
+    PRODUCT_TYPE_ELECTRONICS = "electronics"
+    PRODUCT_TYPE_MOBILE = "mobile"
+    PRODUCT_TYPE_HOME_APPLIANCE = "home_appliance"
+    PRODUCT_TYPE_BEAUTY = "beauty"
+    PRODUCT_TYPE_FOOD = "food"
+    PRODUCT_TYPE_FURNITURE = "furniture"
+    PRODUCT_TYPE_SPORTS = "sports"
+    PRODUCT_TYPE_TOYS = "toys"
     PRODUCT_TYPE_CHOICES = [
         (PRODUCT_TYPE_BOOK, "Book"),
         (PRODUCT_TYPE_CLOTHING, "Clothing"),
+        (PRODUCT_TYPE_ELECTRONICS, "Electronics"),
+        (PRODUCT_TYPE_MOBILE, "Mobile"),
+        (PRODUCT_TYPE_HOME_APPLIANCE, "Home Appliance"),
+        (PRODUCT_TYPE_BEAUTY, "Beauty"),
+        (PRODUCT_TYPE_FOOD, "Food"),
+        (PRODUCT_TYPE_FURNITURE, "Furniture"),
+        (PRODUCT_TYPE_SPORTS, "Sports"),
+        (PRODUCT_TYPE_TOYS, "Toys"),
     ]
 
     title = models.CharField(max_length=255)
@@ -22,9 +38,9 @@ class Book(models.Model):
     gender_target = models.CharField(max_length=32, blank=True, default="")
     
     # New ForeignKey relationships (Microservices Phase 1)
-    author_fk = models.ForeignKey('store.Author', on_delete=SET_NULL, null=True, blank=True, related_name='books_by_fk')
-    category_fk = models.ForeignKey('store.Category', on_delete=SET_NULL, null=True, blank=True, related_name='books_by_fk')
-    categories_m2m = models.ManyToManyField('store.Category', blank=True, related_name='books_multi')
+    author_fk = models.ForeignKey('store.Author', on_delete=SET_NULL, null=True, blank=True, related_name='products_by_fk')
+    category_fk = models.ForeignKey('store.Category', on_delete=SET_NULL, null=True, blank=True, related_name='products_by_fk')
+    categories_m2m = models.ManyToManyField('store.Category', blank=True, related_name='products_multi')
     description = models.TextField(blank=True)
     attributes = models.JSONField(default=dict, blank=True)
     rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)  # 0.0 to 5.0

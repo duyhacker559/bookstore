@@ -10,7 +10,7 @@ def consolidate_inventory(apps, schema_editor):
     Book = apps.get_model('store', 'Book')
     Inventory = apps.get_model('store', 'Inventory')
     
-    for book in Book.objects.all():
+    for book in Product.objects.all():
         try:
             inv = Inventory.objects.get(book=book)
             # Update Inventory quantity to match Book.stock if they differ
@@ -39,3 +39,4 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(consolidate_inventory, reverse_consolidate),
     ]
+

@@ -3,7 +3,7 @@ Product Search & Filter - Search and filter products based on category-specific 
 """
 
 from django.db.models import Q, QuerySet
-from store.models import Book
+from store.models import Product
 
 
 class ProductSearchFilter:
@@ -105,11 +105,12 @@ class ProductSearchFilter:
 
 # Usage Example:
 # 
-# books = ProductSearchFilter.filter_by_category(Book.objects.all(), 'book')
+# books = ProductSearchFilter.filter_by_category(Product.objects.all(), 'book')
 # results = ProductSearchFilter.search(books, 'python', product_type='book')
 # results = ProductSearchFilter.filter_books_by_author(results, 'John Doe')
 # results = ProductSearchFilter.filter_by_price_range(results, min_price=100, max_price=500)
 #
-# clothing = ProductSearchFilter.filter_by_category(Book.objects.all(), 'clothing')
+# clothing = ProductSearchFilter.filter_by_category(Product.objects.all(), 'clothing')
 # results = ProductSearchFilter.filter_clothing_by_brand(clothing, 'Nike')
 # results = ProductSearchFilter.filter_clothing_by_size(results, 'M')
+

@@ -3,13 +3,13 @@ Product Category Forms - Dynamic forms for different product categories
 """
 
 from django import forms
-from store.models import Book
+from store.models import Product
 
 
 class BaseProductForm(forms.ModelForm):
     """Base form for product with common fields"""
     class Meta:
-        model = Book
+        model = Product
         fields = ['title', 'description', 'price', 'stock', 'product_type', 
                   'category_fk', 'categories_m2m', 'rating']
 

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Avg
 from django.core.exceptions import ObjectDoesNotExist
-from store.models.product.product import Book
+from store.models.product.product import Product
 from store.models.customer.customer import Customer
 from store.models.rating.rating import Rating, Comment
 from store.models.order.order_item import OrderItem
@@ -12,13 +12,13 @@ from store.models.order.order_item import OrderItem
 @login_required(login_url='login')
 def add_rating_comment(request, book_id):
     """Add or update rating and comment for a book"""
-    book = get_object_or_404(Book, id=book_id)
+    book = get_object_or_404(Product, id=book_id)
     customer = get_object_or_404(Customer, user=request.user)
     
     # Check if customer purchased this book
     has_purchased = OrderItem.objects.filter(
         order__customer=customer,
-        book=book
+        product=book
     ).exists()
     
     if request.method == 'POST':
@@ -29,7 +29,7 @@ def add_rating_comment(request, book_id):
         # Create a rating snapshot per submission so each comment keeps its own score context.
         rating = Rating.objects.create(
             customer=customer,
-            book=book,
+            product=book,
             score=score,
         )
         
@@ -37,7 +37,7 @@ def add_rating_comment(request, book_id):
         if title and content:
             Comment.objects.create(
                 customer=customer,
-                book=book,
+                product=book,
                 rating=rating,
                 title=title,
                 content=content,
@@ -45,11 +45,11 @@ def add_rating_comment(request, book_id):
             )
         
         # Update book's average rating and review count
-        avg_rating = Rating.objects.filter(book=book, is_hidden=False).aggregate(
+        avg_rating = Rating.objects.filter(product=book, is_hidden=False).aggregate(
             avg=Avg('score')
         )['avg'] or 0
         # Count only comments that have both title and content (verified reviews)
-        review_count = Comment.objects.filter(book=book, is_hidden=False).count()
+        review_count = Comment.objects.filter(product=book, is_hidden=False).count()
         
         book.rating = round(float(avg_rating), 1)
         book.review_count = review_count
@@ -58,10 +58,10 @@ def add_rating_comment(request, book_id):
         return redirect('detail_redirect', book_id=book.id)
     
     # GET request - show form
-    existing_rating = Rating.objects.filter(customer=customer, book=book).order_by('-created_at').first()
-    existing_comment = Comment.objects.filter(customer=customer, book=book).first() if existing_rating else None
+    existing_rating = Rating.objects.filter(customer=customer, product=book).order_by('-created_at').first()
+    existing_comment = Comment.objects.filter(customer=customer, product=book).first() if existing_rating else None
     
-    return render(request, 'book/add_rating_comment.html', {
+    return render(request, 'product/add_rating_comment.html', {
         'book': book,
         'existing_rating': existing_rating,
         'existing_comment': existing_comment,
@@ -84,16 +84,16 @@ def mark_helpful(request, comment_id):
                 'helpful_count': comment.helpful_count
             })
     
-    return redirect('detail_redirect', book_id=comment.book.id)
+    return redirect('detail_redirect', book_id=comment.product.id)
 
 
 def product_reviews(request, book_id):
     """Display all reviews and ratings for a product"""
-    book = get_object_or_404(Book, id=book_id)
+    book = get_object_or_404(Product, id=book_id)
     
     # Get all ratings and comments
-    ratings = Rating.objects.filter(book=book, is_hidden=False).order_by('-created_at')
-    comments = Comment.objects.filter(book=book, is_hidden=False).select_related('customer__user', 'rating')
+    ratings = Rating.objects.filter(product=book, is_hidden=False).order_by('-created_at')
+    comments = Comment.objects.filter(product=book, is_hidden=False).select_related('customer__user', 'rating')
 
     # Add avatar URL for each commenter, with graceful fallback when no profile/avatar exists.
     for comment in comments:
@@ -117,7 +117,7 @@ def product_reviews(request, book_id):
     avg_rating = ratings.aggregate(Avg('score'))['score__avg'] or 0
     total_ratings = ratings.count()
     
-    return render(request, 'book/reviews.html', {
+    return render(request, 'product/reviews.html', {
         'book': book,
         'ratings': ratings,
         'comments': comments,
@@ -129,10 +129,10 @@ def product_reviews(request, book_id):
 
 def get_ratings_api(request, book_id):
     """API endpoint to get ratings and comments for a book"""
-    book = get_object_or_404(Book, id=book_id)
+    book = get_object_or_404(Product, id=book_id)
     
-    ratings = Rating.objects.filter(book=book, is_hidden=False)
-    comments = Comment.objects.filter(book=book, is_hidden=False)
+    ratings = Rating.objects.filter(product=book, is_hidden=False)
+    comments = Comment.objects.filter(product=book, is_hidden=False)
     
     data = {
         'book_id': book.id,
@@ -163,3 +163,4 @@ def get_ratings_api(request, book_id):
     }
     
     return JsonResponse(data)
+

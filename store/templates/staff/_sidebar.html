@@ -1,0 +1,29 @@
+<aside class="staff-sidebar">
+  <div class="brand">🏪 Staff Panel</div>
+  <nav>
+    <a href="{% url 'staff_home' %}" class="{% if active_tab == 'dashboard' %}active{% endif %}">🏠 Dashboard</a>
+    
+    <div class="nav-section">Catalogue</div>
+    <a href="{% url 'staff_books' %}" class="{% if active_tab == 'products' and not request.GET.product_type %}active{% endif %}">📦 All Products</a>
+    <a href="{% url 'staff_books' %}?product_type=book" class="{% if active_tab == 'products' and request.GET.product_type == 'book' %}active{% endif %}">📚 Books</a>
+    <a href="{% url 'staff_books' %}?product_type=clothing" class="{% if active_tab == 'products' and request.GET.product_type == 'clothing' %}active{% endif %}">👕 Clothing</a>
+    <a href="{% url 'staff_books' %}?product_type=electronics" class="{% if active_tab == 'products' and request.GET.product_type == 'electronics' %}active{% endif %}">🔌 Electronics</a>
+    <a href="{% url 'staff_books' %}?product_type=mobile" class="{% if active_tab == 'products' and request.GET.product_type == 'mobile' %}active{% endif %}">📱 Mobile</a>
+    <a href="{% url 'staff_books' %}?product_type=home_appliance" class="{% if active_tab == 'products' and request.GET.product_type == 'home_appliance' %}active{% endif %}">🏠 Appliance</a>
+    <a href="{% url 'staff_books' %}?product_type=beauty" class="{% if active_tab == 'products' and request.GET.product_type == 'beauty' %}active{% endif %}">💄 Beauty</a>
+    <a href="{% url 'staff_books' %}?product_type=food" class="{% if active_tab == 'products' and request.GET.product_type == 'food' %}active{% endif %}">🍜 Food</a>
+    <a href="{% url 'staff_books' %}?product_type=furniture" class="{% if active_tab == 'products' and request.GET.product_type == 'furniture' %}active{% endif %}">🪑 Furniture</a>
+    <a href="{% url 'staff_books' %}?product_type=sports" class="{% if active_tab == 'products' and request.GET.product_type == 'sports' %}active{% endif %}">⚽ Sports</a>
+    <a href="{% url 'staff_books' %}?product_type=toys" class="{% if active_tab == 'products' and request.GET.product_type == 'toys' %}active{% endif %}">🧸 Toys</a>
+    
+    <div class="nav-section">Orders</div>
+    <a href="{% url 'staff_manage_shipments' %}" class="{% if active_tab == 'shipments' %}active{% endif %}">🚚 Shipments</a>
+    
+    <div class="nav-section">Community</div>
+    <a href="{% url 'staff_feedback_moderation' %}" class="{% if active_tab == 'moderation' %}active{% endif %}">🛡 Moderation</a>
+    <a href="{% url 'staff_inbox' %}" class="{% if active_tab == 'inbox' %}active{% endif %}">📥 Inbox{% if staff_inbox_unread_count > 0 %} ({{ staff_inbox_unread_count }}){% endif %}</a>
+    
+    <div class="nav-section">Insights</div>
+    <a href="{% url 'staff_analytics' %}" class="{% if active_tab == 'analytics' %}active{% endif %}">📊 Analytics</a>
+  </nav>
+</aside>

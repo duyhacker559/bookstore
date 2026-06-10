@@ -64,13 +64,14 @@ class Migration(migrations.Migration):
             model_name='book',
             name='author_fk',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, 
-                                   related_name='books', to='store.author'),
+                                   related_name="products", to="store.author"),
         ),
         migrations.AddField(
             model_name='book',
             name='category_fk',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                   related_name='books', to='store.category'),
+                                   related_name="products", to="store.category"),
         ),
         migrations.RunPython(link_authors_categories, reverse_link),
     ]
+

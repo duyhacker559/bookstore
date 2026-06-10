@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, F, Count, Value, CharField, Min, Max, DecimalField, Case, When, FloatField, IntegerField
 from django.db.models.functions import Cast, Coalesce
 from store.models.recommendation.recommendation import Recommendation
-from store.models.product.product import Book
+from store.models.product.product import Product
 from store.models.order.order_item import OrderItem
 from store.models.customer.customer import Customer
 
@@ -23,9 +23,9 @@ def data_model_recommendation(request):
     user_purchases = set()
     user_categories = []
     if customer:
-        purchased_books = OrderItem.objects.filter(order__customer=customer).values_list('book_id', flat=True).distinct()
+        purchased_books = OrderItem.objects.filter(order__customer=customer).values_list('product_id', flat=True).distinct()
         user_purchases = set(purchased_books)
-        purchased_book_objects = Book.objects.prefetch_related('categories_m2m').filter(id__in=purchased_books)
+        purchased_book_objects = Product.objects.prefetch_related('categories_m2m').filter(id__in=purchased_books)
         user_categories = sorted({
             category_name
             for book in purchased_book_objects
@@ -41,8 +41,8 @@ def data_model_recommendation(request):
     product_type = request.GET.get("product_type", "").strip().lower()
     filter_type = request.GET.get("filter", "all").strip()
 
-    product_type_labels = {key: value for key, value in Book.PRODUCT_TYPE_CHOICES}
-    for type_key in Book.objects.values_list("product_type", flat=True).distinct():
+    product_type_labels = {key: value for key, value in Product.PRODUCT_TYPE_CHOICES}
+    for type_key in Product.objects.values_list("product_type", flat=True).distinct():
         if type_key and type_key not in product_type_labels:
             product_type_labels[type_key] = type_key.replace("_", " ").title()
 
@@ -52,7 +52,7 @@ def data_model_recommendation(request):
             "label": product_type_labels.get(type_key, type_key.replace("_", " ").title()),
         }
         for type_key in sorted(
-            [value for value in Book.objects.values_list("product_type", flat=True).distinct() if value]
+            [value for value in Product.objects.values_list("product_type", flat=True).distinct() if value]
         )
     ]
     valid_product_types = {item["value"] for item in available_product_types}
@@ -60,9 +60,9 @@ def data_model_recommendation(request):
     # Base candidate set
     # world_pick uses global catalog behavior (including already purchased books)
     if filter_type == "world_pick":
-        recommendations = Book.objects.prefetch_related('images', 'categories_m2m')
+        recommendations = Product.objects.prefetch_related('images', 'categories_m2m')
     else:
-        recommendations = Book.objects.prefetch_related('images', 'categories_m2m').exclude(id__in=user_purchases)
+        recommendations = Product.objects.prefetch_related('images', 'categories_m2m').exclude(id__in=user_purchases)
     
     # Apply search filter
     if query:
@@ -189,7 +189,7 @@ def data_model_recommendation(request):
     if filter_type in {"all", "trending", "rated", "deals"}:
         excluded_ids = {book.id for book in primary_books}
 
-        world_pick_qs = Book.objects.prefetch_related('images', 'categories_m2m').exclude(id__in=user_purchases).exclude(id__in=excluded_ids)
+        world_pick_qs = Product.objects.prefetch_related('images', 'categories_m2m').exclude(id__in=user_purchases).exclude(id__in=excluded_ids)
         if query:
             world_pick_qs = world_pick_qs.filter(
                 Q(title__icontains=query)
@@ -232,7 +232,7 @@ def data_model_recommendation(request):
 
     # Fallback: if personalized and world picks are empty, pull from filtered catalog
     if not primary_books and not world_pick_books:
-        fallback_qs = Book.objects.prefetch_related('images', 'categories_m2m').all()
+        fallback_qs = Product.objects.prefetch_related('images', 'categories_m2m').all()
 
         if query:
             fallback_qs = fallback_qs.filter(
@@ -280,12 +280,12 @@ def data_model_recommendation(request):
     # Get available categories for filter
     all_categories = sorted({
         category_name
-        for book in Book.objects.prefetch_related('categories_m2m').all()
+        for book in Product.objects.prefetch_related('categories_m2m').all()
         for category_name in book.category_names
     })
     
     # Get price range for filter
-    price_stats = Book.objects.aggregate(min_price=Min('price'), max_price=Max('price'))
+    price_stats = Product.objects.aggregate(min_price=Min('price'), max_price=Max('price'))
     merged_recommendations = primary_books + world_pick_books
     avg_rating_value = 0
     if merged_recommendations:

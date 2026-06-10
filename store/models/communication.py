@@ -1,6 +1,6 @@
 from django.db import models
 from store.models.customer.customer import Customer
-from store.models.product.product import Book
+from store.models.product.product import Product
 
 
 class UserNotification(models.Model):
@@ -36,7 +36,7 @@ class InboxMessage(models.Model):
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="inbox_messages")
-    book = models.ForeignKey(Book, on_delete=models.SET_NULL, null=True, blank=True, related_name="inbox_messages")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="inbox_messages")
     subject = models.CharField(max_length=200)
     content = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="unread")
@@ -121,3 +121,5 @@ class AIChatMessage(models.Model):
 
     def __str__(self):
         return f"{self.role} message {self.id} in session {self.session_id}"
+
+

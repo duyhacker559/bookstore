@@ -1,0 +1,41 @@
+# Root level files not needed in service containers
+.git
+.gitignore
+.github
+.env
+.vscode
+.DS_Store
+Thumbs.db
+
+# Cache and compiled Python
+__pycache__
+*.py[cod]
+*$py.class
+.pytest_cache
+.mypy_cache
+*.egg-info
+
+# Test and documentation files
+test_*.py
+*_test.py
+*.md
+*.log
+*.sqlite3
+
+# Development directories
+_github_not_needed
+diagrams
+tools
+
+# Docker build files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Generated/temporary files
+*.tmp
+*.swp
+*~
+node_modules
+dist
+build

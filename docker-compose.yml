@@ -13,7 +13,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "${MYSQL_HOST_PORT:-3307}:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u${MYSQL_USER:-store} -p${MYSQL_PASSWORD:-store_password}"]
       interval: 10s
@@ -82,13 +82,8 @@ services:
       - PAYMENT_SERVICE_TOKEN=payment-service-token-123
       - SHIPPING_SERVICE_URL=http://shipping-service:5001
       - SHIPPING_SERVICE_TOKEN=shipping-service-token-123
-      - BEHAVIOR_SERVICE_URL=http://behavior-service:5004
-      - BEHAVIOR_SERVICE_TOKEN=behavior-service-token-123
-      - RAG_SERVICE_URL=http://rag-service:5005
-      - RAG_SERVICE_TOKEN=rag-service-token-123
-      - AI_BEHAVIOR_SERVICE_URL=http://ai-behavior-service:5006
-      - AI_BEHAVIOR_SERVICE_TOKEN=ai-behavior-service-token-123
-      - AI_ADVANCED_WIDGET_ENABLED=${AI_ADVANCED_WIDGET_ENABLED:-False}
+      - AI_SERVICE_URL=http://ai-service:5006
+      - AI_SERVICE_TOKEN=ai-service-token-123
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
@@ -206,52 +201,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # Behavior Service (FastAPI)
-  behavior-service:
-    build:
-      context: ./behavior-service
-      dockerfile: Dockerfile
-    container_name: store-behavior-service
-    command: uvicorn app:app --host 0.0.0.0 --port 5004 --reload
-    volumes:
-      - ./behavior-service:/app
-    ports:
-      - "5004:5004"
-    environment:
-      - DEBUG=True
-      - BEHAVIOR_SERVICE_TOKEN=behavior-service-token-123
-      - BEHAVIOR_TRAIN_DATA_PATH=/app/data/vi_behavior_lexicon.json
-      - LOG_LEVEL=INFO
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # RAG Service (FastAPI)
-  rag-service:
-    build:
-      context: ./rag-service
-      dockerfile: Dockerfile
-    container_name: store-rag-service
-    command: uvicorn app:app --host 0.0.0.0 --port 5005 --reload
-    volumes:
-      - ./rag-service:/app
-    ports:
-      - "5005:5005"
-    environment:
-      - DEBUG=True
-      - RAG_SERVICE_TOKEN=rag-service-token-123
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flask}
-      - GEMINI_API_VERSION=${GEMINI_API_VERSION:-v1beta}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - LOG_LEVEL=INFO
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   # Neo4j for AI Service
   neo4j:
     image: neo4j:5.24-community
@@ -278,26 +227,28 @@ services:
       timeout: 10s
       retries: 10
 
-  # AI Behavior Service (FastAPI)
-  ai-behavior-service:
+  # AI Service (FastAPI)
+  ai-service:
     build:
-      context: ./ai-customer-behavior/service
+      context: ./ai-service
       dockerfile: Dockerfile
-    container_name: store-ai-behavior-service
+    container_name: store-ai-service
     command: uvicorn app:app --host 0.0.0.0 --port 5006 --reload
     volumes:
-      - ./ai-customer-behavior/service:/app
+      - ./ai-service:/app
     ports:
       - "5006:5006"
     environment:
       - DEBUG=True
-      - AI_BEHAVIOR_SERVICE_TOKEN=ai-behavior-service-token-123
-      - AI_BEHAVIOR_DB_PATH=/app/data/behavior_events.db
+      - AUTH_TOKEN=ai-service-token-123
       - NEO4J_URI=neo4j://neo4j:7687
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=neo4j_password
       - NEO4J_DATABASE=neo4j
       - LOG_LEVEL=INFO
+    depends_on:
+      neo4j:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5006/health"]
       interval: 30s

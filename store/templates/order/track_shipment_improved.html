@@ -71,8 +71,8 @@
             {% for item in shipment.order.items.all %}
             <div style="display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #e2e8f0;">
                 <div>
-                    <p style="margin: 0; color: #1e293b; font-weight: 500;">{{ item.book.title }}</p>
-                    <p style="margin: 5px 0 0; color: #64748b; font-size: 0.9rem;">{{ item.book.creator_label }}: {{ item.book.creator_display }}</p>
+                    <p style="margin: 0; color: #1e293b; font-weight: 500;">{{ item.product.title }}</p>
+                    <p style="margin: 5px 0 0; color: #64748b; font-size: 0.9rem;">{{ item.product.creator_label }}: {{ item.product.creator_display }}</p>
                 </div>
                 <div style="text-align: right;">
                     <p style="margin: 0; color: #2563eb; font-weight: 600;">Qty: {{ item.quantity }}</p>

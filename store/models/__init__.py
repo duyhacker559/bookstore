@@ -1,4 +1,4 @@
-from .product import Book
+from .product import Product
 from .customer import Customer
 from .staff import Staff
 from .order import Order, OrderItem, Payment, Shipment
@@ -9,7 +9,7 @@ from .recommendation import Recommendation
 from .author import Author
 from .category import Category
 from .inventory import Inventory
-from .product import BookDetail, BookImage
+from .product import ProductDetail, ProductImage
 from .user_profile import UserProfile
 from .rating.rating import Rating, Comment
 from .communication import (

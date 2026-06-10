@@ -80,23 +80,7 @@ select.sort-sel{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font
 
 <div class="staff-products-page">
 <div class="staff-wrap">
-  <aside class="staff-sidebar">
-    <div class="brand">🏪 Staff Panel</div>
-    <nav>
-      <a href="{% url 'staff_home' %}">🏠 Dashboard</a>
-      <div class="nav-section">Catalogue</div>
-      <a href="{% url 'staff_books' %}" class="{% if not request.GET.product_type %}active{% endif %}">📦 All Products</a>
-      <a href="{% url 'staff_books' %}?product_type=book" class="{% if request.GET.product_type == 'book' %}active{% endif %}">📚 Books</a>
-      <a href="{% url 'staff_books' %}?product_type=clothing" class="{% if request.GET.product_type == 'clothing' %}active{% endif %}">👕 Clothing</a>
-      <div class="nav-section">Orders</div>
-      <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
-      <div class="nav-section">Community</div>
-      <a href="{% url 'staff_feedback_moderation' %}">🛡 Moderation</a>
-      <a href="{% url 'staff_inbox' %}">📥 Inbox{% if staff_inbox_unread_count > 0 %} ({{ staff_inbox_unread_count }}){% endif %}</a>
-      <div class="nav-section">Insights</div>
-      <a href="{% url 'staff_analytics' %}">📊 Analytics</a>
-    </nav>
-  </aside>
+  {% include "staff/_sidebar.html" with active_tab="products" %}
 
   <main class="staff-main">
     <div class="page-header">
@@ -125,6 +109,14 @@ select.sort-sel{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font
           <option value="" {% if not product_type %}selected{% endif %}>All Types</option>
           <option value="book" {% if product_type == 'book' %}selected{% endif %}>Books</option>
           <option value="clothing" {% if product_type == 'clothing' %}selected{% endif %}>Clothing</option>
+          <option value="electronics" {% if product_type == 'electronics' %}selected{% endif %}>Electronics</option>
+          <option value="mobile" {% if product_type == 'mobile' %}selected{% endif %}>Mobile</option>
+          <option value="home_appliance" {% if product_type == 'home_appliance' %}selected{% endif %}>Home Appliance</option>
+          <option value="beauty" {% if product_type == 'beauty' %}selected{% endif %}>Beauty</option>
+          <option value="food" {% if product_type == 'food' %}selected{% endif %}>Food</option>
+          <option value="furniture" {% if product_type == 'furniture' %}selected{% endif %}>Furniture</option>
+          <option value="sports" {% if product_type == 'sports' %}selected{% endif %}>Sports</option>
+          <option value="toys" {% if product_type == 'toys' %}selected{% endif %}>Toys</option>
         </select>
         <button type="submit" class="btn btn-outline">🔍 Search</button>
       </div>
@@ -238,6 +230,7 @@ select.sort-sel{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font
                   data-size-options="{{ book.size_options|default_if_none:'' }}"
                   data-material="{{ book.material|default_if_none:'' }}"
                   data-gender-target="{{ book.gender_target|default_if_none:'' }}"
+                  data-attributes-json="{{ book.attributes_json|escapejs }}"
                   onclick="openEditFromButton(this)">✏ Edit</button>
                 <form method="post" action="{% url 'staff_delete_book' book.id %}" onsubmit="return confirm('Delete \'{{ book.title|escapejs }}\'?');">
                   {% csrf_token %}
@@ -269,6 +262,14 @@ select.sort-sel{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font
           <select name="product_type" id="add-product-type" onchange="toggleProductFields('add')">
             <option value="book" selected>Book</option>
             <option value="clothing">Clothing</option>
+            <option value="electronics">Electronics</option>
+            <option value="mobile">Mobile</option>
+            <option value="home_appliance">Home Appliance</option>
+            <option value="beauty">Beauty</option>
+            <option value="food">Food</option>
+            <option value="furniture">Furniture</option>
+            <option value="sports">Sports</option>
+            <option value="toys">Toys</option>
           </select>
         </div>
         <div class="form-group" id="add-author-group">
@@ -339,6 +340,40 @@ select.sort-sel{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font
         <label>Description</label>
         <textarea name="description" placeholder="Short description…"></textarea>
       </div>
+
+      <div class="form-group" style="margin-top:14px;">
+        <label>Product Attributes (dynamic by type)</label>
+        <div class="form-row">
+          <div class="form-group detail-field" data-types="book,electronics,mobile,home_appliance,beauty,food,sports,toys">
+            <label>Brand</label>
+            <input type="text" name="detail_brand" id="add-detail-brand" placeholder="Brand name">
+          </div>
+          <div class="form-group detail-field" data-types="book,mobile,electronics">
+            <label>Model</label>
+            <input type="text" name="detail_model" id="add-detail-model" placeholder="Model">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group detail-field" data-types="book">
+            <label>Publisher</label>
+            <input type="text" name="detail_publisher" id="add-detail-publisher" placeholder="Publisher">
+          </div>
+          <div class="form-group detail-field" data-types="book">
+            <label>Pages</label>
+            <input type="number" name="detail_pages" id="add-detail-pages" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group detail-field" data-types="book">
+            <label>Language</label>
+            <input type="text" name="detail_language" id="add-detail-language" placeholder="Vietnamese">
+          </div>
+          <div class="form-group detail-field" data-types="electronics,home_appliance">
+            <label>Warranty (months)</label>
+            <input type="number" name="detail_warranty_months" id="add-detail-warranty_months" placeholder="12" min="0">
+          </div>
+        </div>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn btn-outline" onclick="document.getElementById('addModal').classList.remove('show')">Cancel</button>
         <button type="submit" class="btn btn-primary">Add Product</button>
@@ -359,6 +394,14 @@ select.sort-sel{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font
           <select name="product_type" id="edit-product-type" onchange="toggleProductFields('edit')">
             <option value="book">Book</option>
             <option value="clothing">Clothing</option>
+            <option value="electronics">Electronics</option>
+            <option value="mobile">Mobile</option>
+            <option value="home_appliance">Home Appliance</option>
+            <option value="beauty">Beauty</option>
+            <option value="food">Food</option>
+            <option value="furniture">Furniture</option>
+            <option value="sports">Sports</option>
+            <option value="toys">Toys</option>
           </select>
         </div>
         <div class="form-group" id="edit-author-group">
@@ -429,6 +472,40 @@ select.sort-sel{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font
         <label>Description</label>
         <textarea name="description" id="edit-description"></textarea>
       </div>
+
+      <div class="form-group" style="margin-top:14px;">
+        <label>Product Attributes (dynamic by type)</label>
+        <div class="form-row">
+          <div class="form-group detail-field" data-types="book,electronics,mobile,home_appliance,beauty,food,sports,toys">
+            <label>Brand</label>
+            <input type="text" name="detail_brand" id="edit-detail-brand" placeholder="Brand name">
+          </div>
+          <div class="form-group detail-field" data-types="book,mobile,electronics">
+            <label>Model</label>
+            <input type="text" name="detail_model" id="edit-detail-model" placeholder="Model">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group detail-field" data-types="book">
+            <label>Publisher</label>
+            <input type="text" name="detail_publisher" id="edit-detail-publisher" placeholder="Publisher">
+          </div>
+          <div class="form-group detail-field" data-types="book">
+            <label>Pages</label>
+            <input type="number" name="detail_pages" id="edit-detail-pages" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group detail-field" data-types="book">
+            <label>Language</label>
+            <input type="text" name="detail_language" id="edit-detail-language" placeholder="Vietnamese">
+          </div>
+          <div class="form-group detail-field" data-types="electronics,home_appliance">
+            <label>Warranty (months)</label>
+            <input type="number" name="detail_warranty_months" id="edit-detail-warranty_months" placeholder="12" min="0">
+          </div>
+        </div>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn btn-outline" onclick="document.getElementById('editModal').classList.remove('show')">Cancel</button>
         <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -484,24 +561,26 @@ function toggleProductFields(prefix) {
   const sizeGroup = document.getElementById(prefix + '-size-group');
   const materialGroup = document.getElementById(prefix + '-material-group');
   const genderGroup = document.getElementById(prefix + '-gender-group');
-  const isClothing = typeField && typeField.value === 'clothing';
+  const currentType = typeField ? typeField.value : 'book';
+  const isClothing = currentType === 'clothing';
+  const isBook = currentType === 'book';
 
-  if (authorGroup) authorGroup.classList.toggle('is-hidden', isClothing);
-  if (brandGroup) brandGroup.classList.toggle('is-hidden', !isClothing);
+  if (authorGroup) authorGroup.classList.toggle('is-hidden', !isBook);
+  if (brandGroup) brandGroup.classList.toggle('is-hidden', isBook);
   if (sizeGroup) sizeGroup.classList.toggle('is-hidden', !isClothing);
-  if (materialGroup) materialGroup.classList.toggle('is-hidden', !isClothing);
-  if (genderGroup) genderGroup.classList.toggle('is-hidden', !isClothing);
+  if (materialGroup) materialGroup.classList.toggle('is-hidden', !isClothing && currentType !== 'sports' && currentType !== 'furniture');
+  if (genderGroup) genderGroup.classList.toggle('is-hidden', !isClothing && currentType !== 'sports');
 
   if (authorLabel) authorLabel.textContent = 'Author *';
   if (authorInput) {
-    authorInput.required = !isClothing;
-    authorInput.disabled = isClothing;
-    if (isClothing) authorInput.value = '';
+    authorInput.required = isBook;
+    authorInput.disabled = !isBook;
+    if (!isBook) authorInput.value = '';
   }
   if (brandInput) {
-    brandInput.required = isClothing;
-    brandInput.disabled = !isClothing;
-    if (!isClothing) brandInput.value = '';
+    brandInput.required = !isBook;
+    brandInput.disabled = isBook;
+    if (isBook) brandInput.value = '';
   }
   if (sizeInput) {
     sizeInput.disabled = !isClothing;
@@ -512,12 +591,17 @@ function toggleProductFields(prefix) {
     if (!isClothing) materialInput.value = '';
   }
   if (genderInput) {
-    genderInput.disabled = !isClothing;
-    if (!isClothing) genderInput.value = '';
+    genderInput.disabled = !(isClothing || currentType === 'sports');
+    if (!(isClothing || currentType === 'sports')) genderInput.value = '';
   }
+
+  document.querySelectorAll('.detail-field').forEach(function (el) {
+    const types = (el.dataset.types || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    el.classList.toggle('is-hidden', types.length > 0 && types.indexOf(currentType) === -1);
+  });
 }
 
-function openEdit(id, title, productType, author, brand, price, stock, categoryIdsCsv, description, sizeOptions, material, genderTarget) {
+function openEdit(id, title, productType, author, brand, price, stock, categoryIdsCsv, description, sizeOptions, material, genderTarget, attributesJson) {
   const base = "{% url 'staff_edit_book' 0 %}".replace('/0/', '/' + id + '/');
   document.getElementById('editForm').action = base;
   document.getElementById('edit-title').value = title;
@@ -530,6 +614,32 @@ function openEdit(id, title, productType, author, brand, price, stock, categoryI
   document.getElementById('edit-size-options').value = sizeOptions || '';
   document.getElementById('edit-material').value = material || '';
   document.getElementById('edit-gender-target').value = genderTarget || '';
+  try {
+    const attrs = attributesJson ? JSON.parse(attributesJson) : {};
+    const detailKeyMap = {
+      book: 'book_details',
+      clothing: 'clothing_details',
+      electronics: 'electronics_details',
+      mobile: 'mobile_details',
+      home_appliance: 'home_appliance_details',
+      beauty: 'beauty_details',
+      food: 'food_details',
+      furniture: 'furniture_details',
+      sports: 'sports_details',
+      toys: 'toys_details'
+    };
+    const key = detailKeyMap[productType] || '';
+    const details = (key && attrs && attrs[key]) ? attrs[key] : {};
+    ['brand', 'model', 'publisher', 'pages', 'language', 'warranty_months'].forEach(function (name) {
+      const field = document.getElementById('edit-detail-' + name);
+      if (field) field.value = details[name] !== undefined ? details[name] : '';
+    });
+  } catch (e) {
+    ['brand', 'model', 'publisher', 'pages', 'language', 'warranty_months'].forEach(function (name) {
+      const field = document.getElementById('edit-detail-' + name);
+      if (field) field.value = '';
+    });
+  }
   document.getElementById('edit-custom-categories').value = '';
   const selectedIds = new Set((categoryIdsCsv || '').split(',').filter(Boolean));
   document.querySelectorAll('.edit-category-checkbox').forEach(function (checkbox) {
@@ -553,7 +663,8 @@ function openEditFromButton(button) {
     button.dataset.description || '',
     button.dataset.sizeOptions || '',
     button.dataset.material || '',
-    button.dataset.genderTarget || ''
+    button.dataset.genderTarget || '',
+    button.dataset.attributesJson || '{}'
   );
 }
 

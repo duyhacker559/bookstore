@@ -18,7 +18,7 @@ from store.models.customer.customer import Customer
 from store.models.order.order import Order
 from store.models.order.order_item import OrderItem
 from store.models.user_profile import UserProfile
-from store.models.product.product import Book
+from store.models.product.product import Product
 from store.models.rating.rating import Comment
 from store.models.communication import (
     UserNotification,
@@ -28,11 +28,10 @@ from store.models.communication import (
     AIChatMessage,
 )
 from store.services.notification_service import create_user_notification
-from store.behavior_client import BehaviorClient, BehaviorServiceError, BehaviorServiceUnavailable
-from store.rag_client import RAGClient, RAGServiceError, RAGServiceUnavailable
-from store.ai_behavior_client import AIBehaviorClient, AIBehaviorServiceError, AIBehaviorServiceUnavailable
+from store.ai_service_client import AIServiceClient, AIServiceError, AIServiceUnavailable
 from store.services.ai_behavior_tracking import (
     build_session_event_signals,
+    get_recent_behavior_events,
     get_recently_viewed_product_ids,
     infer_preferred_category_from_events,
 )
@@ -43,67 +42,30 @@ MAX_AVATAR_SIZE = 2 * 1024 * 1024  # 2MB
 ALLOWED_AVATAR_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 
 
-def _use_advanced_ai_widget() -> bool:
-    return bool(getattr(settings, 'AI_ADVANCED_WIDGET_ENABLED', False))
+def _build_ai_events(request, customer_id):
+    events = get_recent_behavior_events(request, limit=30)
+    normalized = []
 
-
-def _push_advanced_behavior_events(
-    advanced_client,
-    customer_id,
-    session_id,
-    session_events,
-    viewed_product_ids,
-    question='',
-):
-    events = []
-
-    for raw_event in session_events[-20:]:
-        event_type = str(raw_event or '').strip()
-        if not event_type:
+    for event in events:
+        product_id = event.get('product_id')
+        if product_id is None:
             continue
-        events.append(
-            {
-                'user_id': int(customer_id),
-                'session_id': session_id,
-                'event_type': event_type,
-                'metadata': {'surface': 'web_widget'},
-            }
-        )
-
-    for product_id in viewed_product_ids[:10]:
         try:
             normalized_id = int(product_id)
         except (TypeError, ValueError):
             continue
-        events.append(
+        raw_type = str(event.get('type') or '').strip().lower()
+        action = 'buy' if raw_type in {'buy', 'purchase', 'checkout', 'order_completed'} else 'view'
+        normalized.append(
             {
                 'user_id': int(customer_id),
-                'session_id': session_id,
-                'event_type': 'product_detail_view',
                 'product_id': normalized_id,
-                'metadata': {'surface': 'web_widget'},
+                'action': action,
+                'timestamp': event.get('timestamp') or timezone.now().isoformat(),
             }
         )
 
-    if question:
-        events.append(
-            {
-                'user_id': int(customer_id),
-                'session_id': session_id,
-                'event_type': 'chat_question',
-                'query_text': str(question),
-                'metadata': {'surface': 'web_widget'},
-            }
-        )
-
-    if not events:
-        return
-
-    try:
-        advanced_client.ingest_batch(events)
-    except (AIBehaviorServiceUnavailable, AIBehaviorServiceError):
-        # Do not fail user-facing flow when telemetry ingestion fails.
-        return
+    return normalized
 
 
 def _serialize_recommended_products(product_ids):
@@ -119,7 +81,7 @@ def _serialize_recommended_products(product_ids):
     if not normalized_ids:
         return []
 
-    products = Book.objects.filter(id__in=normalized_ids).only(
+    products = Product.objects.filter(id__in=normalized_ids).only(
         'id', 'title', 'price', 'product_type', 'stock'
     )
     product_map = {product.id: product for product in products}
@@ -153,12 +115,12 @@ def _tokenize_text(text):
 def _infer_preferred_category(customer):
     ordered_types = (
         OrderItem.objects.filter(order__customer=customer)
-        .values('book__product_type')
+        .values('product__product_type')
         .annotate(total=Count('id'))
         .order_by('-total')
     )
     for item in ordered_types:
-        value = (item.get('book__product_type') or '').strip().lower()
+        value = (item.get('product__product_type') or '').strip().lower()
         if value:
             return value
     return ''
@@ -166,7 +128,7 @@ def _infer_preferred_category(customer):
 
 def _build_catalog_hints(question, top_k=30):
     tokens = _tokenize_text(question)
-    queryset = Book.objects.filter(stock__gt=0).only('id', 'title', 'price', 'product_type', 'stock')
+    queryset = Product.objects.filter(stock__gt=0).only('id', 'title', 'price', 'product_type', 'stock')
 
     if tokens:
         query = Q()
@@ -176,13 +138,14 @@ def _build_catalog_hints(question, top_k=30):
         if matched_qs:
             queryset = matched_qs
         else:
-            queryset = queryset.order_by('-id')[:top_k]
+            # Fallback to popular diverse items instead of just the newest ones
+            queryset = queryset.order_by('-review_count', '-rating')[:top_k * 3]
     else:
-        queryset = queryset.order_by('-id')[:top_k]
+        queryset = queryset.order_by('-review_count', '-rating')[:top_k * 3]
 
     return [
         {
-            'id': product.id,
+            'product_id': product.id,
             'title': product.title,
             'category': product.product_type,
             'price': float(product.price),
@@ -205,7 +168,7 @@ def _catalog_hints_from_product_ids(product_ids, top_k=20):
     if not normalized_ids:
         return []
 
-    products = Book.objects.filter(id__in=normalized_ids, stock__gt=0).only('id', 'title', 'price', 'product_type', 'stock')
+    products = Product.objects.filter(id__in=normalized_ids, stock__gt=0).only('id', 'title', 'price', 'product_type', 'stock')
     product_map = {product.id: product for product in products}
 
     result = []
@@ -215,7 +178,7 @@ def _catalog_hints_from_product_ids(product_ids, top_k=20):
             continue
         result.append(
             {
-                'id': product.id,
+                'product_id': product.id,
                 'title': product.title,
                 'category': product.product_type,
                 'price': float(product.price),
@@ -233,7 +196,7 @@ def _merge_catalog_hints(primary_hints, secondary_hints, top_k=30):
         if not isinstance(hint, dict):
             continue
         try:
-            product_id = int(hint.get('id'))
+            product_id = int(hint.get('product_id', hint.get('id')))
         except (TypeError, ValueError):
             continue
         if product_id in seen:
@@ -296,7 +259,7 @@ def customer_home(request):
     orders = Order.objects.filter(customer=customer).order_by('-created_at')
     reviewed_books = (
         Comment.objects.filter(customer=customer)
-        .select_related('book', 'rating')
+        .select_related('product', 'rating')
         .order_by('-created_at')[:8]
     )
     total_orders = orders.count()
@@ -457,7 +420,7 @@ def customer_inbox(request):
     book_id = request.GET.get('book_id', '').strip()
     if book_id:
         try:
-            prefill_product = Book.objects.filter(id=int(book_id)).first()
+            prefill_product = Product.objects.filter(id=int(book_id)).first()
         except ValueError:
             prefill_product = None
 
@@ -509,7 +472,7 @@ def customer_inbox(request):
         book = None
         if selected_book:
             try:
-                book = Book.objects.filter(id=int(selected_book)).first()
+                book = Product.objects.filter(id=int(selected_book)).first()
             except ValueError:
                 book = None
 
@@ -519,7 +482,7 @@ def customer_inbox(request):
 
         inbox_message = InboxMessage.objects.create(
             customer=customer,
-            book=book,
+            product=book,
             subject=subject,
             content=content,
         )
@@ -534,7 +497,7 @@ def customer_inbox(request):
     last_reply_qs = InboxReply.objects.filter(inbox_message=OuterRef('pk')).order_by('-created_at')
     messages_qs = (
         InboxMessage.objects.filter(customer=customer)
-        .select_related('book')
+        .select_related('product')
         .annotate(
             reply_count=Count('replies'),
             last_reply_sender=Subquery(last_reply_qs.values('sender_type')[:1]),
@@ -582,7 +545,7 @@ def customer_inbox_thread(request, message_id):
         defaults={'name': request.user.username, 'email': request.user.email}
     )
     inbox_message = get_object_or_404(
-        InboxMessage.objects.select_related('book').prefetch_related('replies'),
+        InboxMessage.objects.select_related('product').prefetch_related('replies'),
         id=message_id,
         customer=customer,
     )
@@ -654,7 +617,7 @@ def customer_inbox_thread_updates(request, message_id):
         defaults={'name': request.user.username, 'email': request.user.email}
     )
     inbox_message = get_object_or_404(
-        InboxMessage.objects.select_related('book').prefetch_related('replies'),
+        InboxMessage.objects.select_related('product').prefetch_related('replies'),
         id=message_id,
         customer=customer,
     )
@@ -801,7 +764,7 @@ def ai_chat_widget(request):
     viewed_product_ids = get_recently_viewed_product_ids(request, limit=12)
     viewed_hints = _catalog_hints_from_product_ids(viewed_product_ids)
     query_hints = _build_catalog_hints(question)
-    catalog_hints = _merge_catalog_hints(viewed_hints, query_hints, top_k=30)
+    catalog_hints = _merge_catalog_hints(viewed_hints, query_hints, top_k=200)
 
     if 'catalog_hints' not in context:
         context['catalog_hints'] = catalog_hints
@@ -825,172 +788,68 @@ def ai_chat_widget(request):
         metadata={'context': context},
     )
 
-    if _use_advanced_ai_widget():
-        advanced_client = AIBehaviorClient()
-        _push_advanced_behavior_events(
-            advanced_client=advanced_client,
-            customer_id=customer.id,
-            session_id=session_id,
-            session_events=session_events + ['web_chat_opened', 'web_chat_question'],
-            viewed_product_ids=viewed_product_ids,
-            question=question,
-        )
-        try:
-            advanced_chat = advanced_client.chat(
-                user_id=customer.id,
-                question=question,
-                session_id=session_id,
-                context=context,
-            )
-        except AIBehaviorServiceUnavailable as exc:
-            AIChatMessage.objects.create(
-                session=chat_session,
-                role='system',
-                message_type='error',
-                content=str(exc),
-                metadata={'status_code': 503, 'source': 'advanced-ai'},
-            )
-            return JsonResponse({'error': str(exc)}, status=503)
-        except AIBehaviorServiceError as exc:
-            AIChatMessage.objects.create(
-                session=chat_session,
-                role='system',
-                message_type='error',
-                content=str(exc),
-                metadata={'status_code': 400, 'source': 'advanced-ai'},
-            )
-            return JsonResponse({'error': str(exc)}, status=400)
-
-        recommended_ids = advanced_chat.get('recommended_products', []) if isinstance(advanced_chat, dict) else []
-        behavior_info = {}
-        if not recommended_ids:
-            try:
-                advanced_recommend = advanced_client.recommend(
-                    user_id=customer.id,
-                    top_k=3,
-                    candidate_products=catalog_hints,
-                )
-                behavior_info = {
-                    'purchase_propensity': advanced_recommend.get('purchase_propensity'),
-                    'category_trends': advanced_recommend.get('category_trends', []),
-                }
-                recommended_ids = [
-                    int(item.get('product_id'))
-                    for item in advanced_recommend.get('recommendations', [])
-                    if isinstance(item, dict) and item.get('product_id') is not None
-                ]
-            except (AIBehaviorServiceUnavailable, AIBehaviorServiceError, TypeError, ValueError):
-                recommended_ids = []
-
-        rag_chunks = advanced_chat.get('rag_chunks', []) if isinstance(advanced_chat, dict) else []
-        response = {
-            'answer': advanced_chat.get('answer', ''),
-            'citations': [chunk.get('node') for chunk in rag_chunks if isinstance(chunk, dict) and chunk.get('node')],
-            'recommended_products': recommended_ids,
-            'recommended_product_items': _serialize_recommended_products(recommended_ids),
-            'intent': 'advanced_ai_chat',
-            'source': advanced_chat.get('source', 'advanced-ai'),
-            'gnn_trends': advanced_chat.get('gnn_trends', []),
-        }
-        if behavior_info:
-            response['behavior'] = behavior_info
-
-        AIChatMessage.objects.create(
-            session=chat_session,
-            role='assistant',
-            message_type='chat_answer',
-            content=response.get('answer', ''),
-            metadata={
-                'citations': response.get('citations', []),
-                'recommended_products': response.get('recommended_products', []),
-                'recommended_product_items': response.get('recommended_product_items', []),
-                'intent': response.get('intent', 'advanced_ai_chat'),
-                'source': response.get('source', 'advanced-ai'),
-            },
-        )
-
-        return JsonResponse(response)
-
-    rag_client = RAGClient()
-    behavior_client = BehaviorClient()
-
-    behavior_result = {}
-    try:
-        behavior_result = behavior_client.score(
-            user_id=customer.id,
-            session_events=session_events + ['web_chat_opened', 'web_chat_question'],
-            context={
-                'surface': 'web_widget',
-                'preferred_category': context.get('preferred_category'),
-                'budget_max': context.get('budget_max'),
-                'query_text': question,
-            }
-        )
-    except (BehaviorServiceUnavailable, BehaviorServiceError):
-        behavior_result = {}
+    client = AIServiceClient()
+    ai_events = _build_ai_events(request, customer.id)
 
     try:
-        rag_result = rag_client.query_chat(
-            session_id=session_id,
+        ai_result = client.chat(
             user_id=customer.id,
+            session_id=session_id,
             question=question,
+            candidate_products=catalog_hints,
+            events=ai_events,
+            session_events=session_events + ['web_chat_opened', 'web_chat_question'],
             context=context,
+            top_k=5,
         )
-    except RAGServiceUnavailable as exc:
+    except AIServiceUnavailable as exc:
         AIChatMessage.objects.create(
             session=chat_session,
             role='system',
             message_type='error',
             content=str(exc),
-            metadata={'status_code': 503},
+            metadata={'status_code': 503, 'source': 'ai-service'},
         )
         return JsonResponse({'error': str(exc)}, status=503)
-    except RAGServiceError as exc:
+    except AIServiceError as exc:
         AIChatMessage.objects.create(
             session=chat_session,
             role='system',
             message_type='error',
             content=str(exc),
-            metadata={'status_code': 400},
+            metadata={'status_code': 400, 'source': 'ai-service'},
         )
         return JsonResponse({'error': str(exc)}, status=400)
 
-    recommended_ids = rag_result.get('recommended_products', []) if isinstance(rag_result, dict) else []
+    recommended_ids = ai_result.get('recommended_products', []) if isinstance(ai_result, dict) else []
     if not recommended_ids:
         try:
-            behavior_recommend = behavior_client.recommend(
+            recommend_result = client.recommend(
                 user_id=customer.id,
-                candidate_product_ids=viewed_product_ids + [item['id'] for item in catalog_hints],
-                candidate_products=catalog_hints,
                 top_k=3,
-                context={
-                    'preferred_category': context.get('preferred_category'),
-                    'budget_max': context.get('budget_max'),
-                    'session_events': session_events + ['web_chat_opened', 'web_chat_question'],
-                    'query_text': question,
-                },
+                candidate_products=catalog_hints,
+                candidate_product_ids=viewed_product_ids + [item.get('product_id', item.get('id')) for item in catalog_hints],
+                events=ai_events,
+                session_events=session_events + ['web_chat_opened', 'web_chat_question'],
+                query=question,
+                context=context,
             )
             recommended_ids = [
                 int(item.get('product_id'))
-                for item in behavior_recommend.get('recommendations', [])
+                for item in recommend_result.get('recommendations', [])
                 if isinstance(item, dict) and item.get('product_id') is not None
             ]
-        except (BehaviorServiceUnavailable, BehaviorServiceError, TypeError, ValueError):
+        except (AIServiceUnavailable, AIServiceError, TypeError, ValueError):
             recommended_ids = []
 
     response = {
-        'answer': rag_result.get('answer', ''),
-        'citations': rag_result.get('citations', []),
+        'answer': ai_result.get('answer', ''),
+        'citations': ai_result.get('citations', []),
         'recommended_products': recommended_ids,
         'recommended_product_items': _serialize_recommended_products(recommended_ids),
-        'intent': rag_result.get('intent', 'unknown'),
+        'intent': 'ai_chat',
+        'source': ai_result.get('source', 'ai-service'),
     }
-    if behavior_result:
-        response['behavior'] = {
-            'purchase_propensity': behavior_result.get('purchase_propensity'),
-            'next_best_categories': behavior_result.get('next_best_categories', []),
-            'value_band': behavior_result.get('value_band'),
-        }
 
     AIChatMessage.objects.create(
         session=chat_session,
@@ -1001,7 +860,8 @@ def ai_chat_widget(request):
             'citations': response.get('citations', []),
             'recommended_products': response.get('recommended_products', []),
             'recommended_product_items': response.get('recommended_product_items', []),
-            'intent': response.get('intent', 'unknown'),
+            'intent': response.get('intent', 'ai_chat'),
+            'source': response.get('source', 'ai-service'),
         },
     )
 
@@ -1028,10 +888,10 @@ def ai_recommend_widget(request):
     viewed_product_ids = get_recently_viewed_product_ids(request, limit=12)
     viewed_hints = _catalog_hints_from_product_ids(viewed_product_ids)
     query_hints = _build_catalog_hints(question)
-    catalog_hints = _merge_catalog_hints(viewed_hints, query_hints, top_k=30)
+    catalog_hints = _merge_catalog_hints(viewed_hints, query_hints, top_k=200)
 
     if not isinstance(candidate_product_ids, list) or not candidate_product_ids:
-        candidate_product_ids = viewed_product_ids + [item['id'] for item in catalog_hints]
+        candidate_product_ids = viewed_product_ids + [item.get('product_id', item.get('id')) for item in catalog_hints]
 
     session_id = (payload.get('session_id') or f'web-user-{request.user.id}-recommend')[:120]
     chat_session, _ = AIChatSession.objects.get_or_create(
@@ -1040,74 +900,18 @@ def ai_recommend_widget(request):
         defaults={'source': 'widget'},
     )
 
-    if _use_advanced_ai_widget():
-        advanced_client = AIBehaviorClient()
-        _push_advanced_behavior_events(
-            advanced_client=advanced_client,
-            customer_id=customer.id,
-            session_id=session_id,
-            session_events=session_events + ['web_widget_recommendation'],
-            viewed_product_ids=viewed_product_ids,
-            question=question,
-        )
-        try:
-            result = advanced_client.recommend(
-                user_id=customer.id,
-                top_k=int(top_k),
-                candidate_products=catalog_hints,
-            )
-            raw_recommendations = result.get('recommendations', []) if isinstance(result, dict) else []
-            product_ids = []
-            for item in raw_recommendations:
-                if not isinstance(item, dict):
-                    continue
-                try:
-                    product_ids.append(int(item.get('product_id')))
-                except (TypeError, ValueError):
-                    continue
-
-            result['recommended_product_items'] = _serialize_recommended_products(product_ids)
-            AIChatMessage.objects.create(
-                session=chat_session,
-                role='assistant',
-                message_type='recommendation',
-                content='Advanced AI recommendation response generated',
-                metadata={
-                    'top_k': int(top_k),
-                    'recommendations': result.get('recommendations', []),
-                    'recommended_product_items': result.get('recommended_product_items', []),
-                    'source': 'advanced-ai',
-                },
-            )
-            return JsonResponse(result)
-        except AIBehaviorServiceUnavailable as exc:
-            AIChatMessage.objects.create(
-                session=chat_session,
-                role='system',
-                message_type='error',
-                content=str(exc),
-                metadata={'status_code': 503, 'source': 'advanced-ai'},
-            )
-            return JsonResponse({'error': str(exc)}, status=503)
-        except AIBehaviorServiceError as exc:
-            AIChatMessage.objects.create(
-                session=chat_session,
-                role='system',
-                message_type='error',
-                content=str(exc),
-                metadata={'status_code': 400, 'source': 'advanced-ai'},
-            )
-            return JsonResponse({'error': str(exc)}, status=400)
-
-    client = BehaviorClient()
+    client = AIServiceClient()
+    ai_events = _build_ai_events(request, customer.id)
     try:
         result = client.recommend(
             user_id=customer.id,
             candidate_product_ids=candidate_product_ids,
             candidate_products=catalog_hints,
+            events=ai_events,
+            session_events=session_events + ['web_widget_recommendation'],
+            query=question,
             context={
                 'preferred_category': infer_preferred_category_from_events(request) or _infer_preferred_category(customer),
-                'session_events': session_events + ['web_widget_recommendation'],
                 'query_text': question,
             },
             top_k=int(top_k),
@@ -1135,7 +939,7 @@ def ai_recommend_widget(request):
             },
         )
         return JsonResponse(result)
-    except BehaviorServiceUnavailable as exc:
+    except AIServiceUnavailable as exc:
         AIChatMessage.objects.create(
             session=chat_session,
             role='system',
@@ -1144,7 +948,7 @@ def ai_recommend_widget(request):
             metadata={'status_code': 503},
         )
         return JsonResponse({'error': str(exc)}, status=503)
-    except BehaviorServiceError as exc:
+    except AIServiceError as exc:
         AIChatMessage.objects.create(
             session=chat_session,
             role='system',
@@ -1155,28 +959,3 @@ def ai_recommend_widget(request):
         return JsonResponse({'error': str(exc)}, status=400)
 
 
-@login_required(login_url='login')
-@require_POST
-def ai_train_model_widget(request):
-    if not request.user.is_staff:
-        return JsonResponse({'error': 'Forbidden'}, status=403)
-
-    try:
-        payload = json.loads(request.body.decode('utf-8')) if request.body else {}
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
-
-    min_events = payload.get('min_events', 50)
-    try:
-        min_events = int(min_events)
-    except (TypeError, ValueError):
-        return JsonResponse({'error': 'Invalid min_events'}, status=400)
-
-    client = AIBehaviorClient()
-    try:
-        result = client.train(min_events=min_events)
-        return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
-        return JsonResponse({'error': str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
-        return JsonResponse({'error': str(exc)}, status=400)

@@ -7,8 +7,8 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from store.models.product.product import Book
-from store.models.product.product_image import BookImage
+from store.models.product.product import Product
+from store.models.product.product_image import ProductImage
 from store.models.category.category import Category
 
 SAMPLE_BRANDS = [
@@ -29,7 +29,7 @@ SAMPLE_TYPES = ["T-Shirt", "Hoodie", "Shirt", "Jacket", "Pants", "Dress"]
 
 
 class Command(BaseCommand):
-    help = "Safely seed clothing products only (never modifies book products or existing images)."
+    help = "Safely seed clothing products only (never modifies Product products or existing images)."
 
     def add_arguments(self, parser):
         parser.add_argument("count", type=int, nargs="?", default=20, help="Number of clothing items to create")
@@ -58,16 +58,16 @@ class Command(BaseCommand):
             product_name = choice(SAMPLE_TYPES)
             title = f"Demo Clothing {seed_stamp}-{i:03d} {product_name}"
 
-            if Book.objects.filter(title=title).exists():
+            if Product.objects.filter(title=title).exists():
                 skipped += 1
                 continue
 
             category_name = choice(SAMPLE_CATEGORIES)
             category_obj, _ = Category.objects.get_or_create(name=category_name)
 
-            clothing = Book.objects.create(
+            clothing = Product.objects.create(
                 title=title,
-                product_type=Book.PRODUCT_TYPE_CLOTHING,
+                product_type=Product.PRODUCT_TYPE_CLOTHING,
                 author="",
                 brand=choice(SAMPLE_BRANDS),
                 price=Decimal(f"{uniform(12.0, 159.0):.2f}"),
@@ -87,7 +87,7 @@ class Command(BaseCommand):
             if download_images:
                 image_bytes = self._download_image(i)
                 if image_bytes:
-                    image = BookImage.objects.create(book=clothing, is_cover=True)
+                    image = ProductImage.objects.create(Product=clothing, is_cover=True)
                     filename = f"clothing_seed_{clothing.id}_{i}.jpg"
                     image.image.save(filename, ContentFile(image_bytes), save=True)
                     image_created += 1
@@ -97,3 +97,4 @@ class Command(BaseCommand):
                 f"Clothing seed complete. Created: {created}, Skipped duplicates: {skipped}, Images downloaded: {image_created}"
             )
         )
+

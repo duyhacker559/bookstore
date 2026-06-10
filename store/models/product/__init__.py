@@ -1,3 +1,3 @@
-from .product import Book
-from .product_detail import BookDetail
-from .product_image import BookImage
+from .product import Product
+from .product_detail import ProductDetail
+from .product_image import ProductImage

@@ -59,8 +59,8 @@
             {% for item in cart_items %}
             <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="color: #64748b;">{{ item.book.title }}</span>
-                    <span style="color: #1e293b; font-weight: 600;">${{ item.book.price|floatformat:2 }}</span>
+                    <span style="color: #64748b;">{{ item.product.title }}</span>
+                    <span style="color: #1e293b; font-weight: 600;">${{ item.product.price|floatformat:2 }}</span>
                 </div>
                 <div style="color: #94a3b8; font-size: 0.9rem;">Qty: {{ item.quantity }}</div>
             </div>

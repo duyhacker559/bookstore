@@ -1,4 +1,4 @@
-from store.models.product.product import Book
+from store.models.product.product import Product
 
 
 class ClothingService:
@@ -18,8 +18,8 @@ class ClothingService:
         return ",".join(tokens)
 
     @staticmethod
-    def apply_clothing_defaults(book: Book) -> None:
-        if book.product_type != Book.PRODUCT_TYPE_CLOTHING:
+    def apply_clothing_defaults(book: Product) -> None:
+        if book.product_type != Product.PRODUCT_TYPE_CLOTHING:
             book.size_options = ""
             book.material = ""
             book.gender_target = ""
@@ -31,3 +31,4 @@ class ClothingService:
         if book.brand and not book.author:
             # Keep compatibility with places still reading author.
             book.author = book.brand
+

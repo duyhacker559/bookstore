@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.urls import reverse
-from store.models.product.product import Book
+from store.models.product.product import Product
 from store.models.category.category import Category
 from store.services.ai_behavior_tracking import track_behavior_event
 
@@ -20,16 +20,16 @@ def catalog_redirect(request):
 
 
 def _product_type_labels():
-    labels = {key: value for key, value in Book.PRODUCT_TYPE_CHOICES}
-    for product_type in Book.objects.values_list("product_type", flat=True).distinct():
+    labels = {key: value for key, value in Product.PRODUCT_TYPE_CHOICES}
+    for product_type in Product.objects.values_list("product_type", flat=True).distinct():
         if product_type and product_type not in labels:
             labels[product_type] = product_type.replace("_", " ").title()
     return labels
 
 
 def _render_catalog(request, catalog_only=False, forced_product_type=None):
-    books = Book.objects.prefetch_related("images", "categories_m2m").all()
-    scoped_books = Book.objects.prefetch_related("categories_m2m").all()
+    books = Product.objects.prefetch_related("images", "categories_m2m").all()
+    scoped_books = Product.objects.prefetch_related("categories_m2m").all()
 
     # Search
     q = request.GET.get("q", "").strip()
@@ -52,14 +52,14 @@ def _render_catalog(request, catalog_only=False, forced_product_type=None):
     sort_by = "featured"
     product_type = (forced_product_type or request.GET.get("type", "")).strip().lower()
 
-    if product_type in {Book.PRODUCT_TYPE_BOOK, Book.PRODUCT_TYPE_CLOTHING}:
+    if product_type:
         books = books.filter(product_type=product_type)
         scoped_books = scoped_books.filter(product_type=product_type)
 
     product_type_labels = _product_type_labels()
     product_type_counts = {
         entry["product_type"]: entry["total"]
-        for entry in Book.objects.values("product_type").annotate(total=Count("id"))
+        for entry in Product.objects.values("product_type").annotate(total=Count("id"))
         if entry["product_type"]
     }
     available_product_types = [
@@ -140,7 +140,7 @@ def _render_catalog(request, catalog_only=False, forced_product_type=None):
     category_counts = {}
     active_filters_count = 0
     if catalog_only:
-        for category_obj in Category.objects.filter(books_multi__in=scoped_books).annotate(book_count=Count("books_multi", distinct=True)).distinct().order_by("name"):
+        for category_obj in Category.objects.filter(products_multi__in=scoped_books).annotate(book_count=Count("products_multi", distinct=True)).distinct().order_by("name"):
             if category_obj.name and category_obj.book_count:
                 category_counts[category_obj.name] = category_obj.book_count
 
@@ -153,13 +153,13 @@ def _render_catalog(request, catalog_only=False, forced_product_type=None):
             active_filters_count += 1
         if in_stock == "1":
             active_filters_count += 1
-        if product_type in {Book.PRODUCT_TYPE_BOOK, Book.PRODUCT_TYPE_CLOTHING}:
+        if product_type:
             active_filters_count += 1
 
     recommended_books = []
     if not catalog_only:
         recommended_books = list(
-            Book.objects.prefetch_related("images", "categories_m2m")
+            Product.objects.prefetch_related("images", "categories_m2m")
             .filter(stock__gt=0)
             .order_by("-rating", "title")[:4]
         )
@@ -169,7 +169,7 @@ def _render_catalog(request, catalog_only=False, forced_product_type=None):
 
     return render(
         request,
-        "book/list.html",
+        "product/list.html",
         {
             "catalog_only": catalog_only,
             "page_obj": page_obj,
@@ -197,15 +197,13 @@ def _render_catalog(request, catalog_only=False, forced_product_type=None):
     )
 
 def detail_redirect(request, book_id):
-    book = get_object_or_404(Book, id=book_id)
+    book = get_object_or_404(Product, id=book_id)
     return redirect("detail", product_type=book.product_type, book_id=book.id)
 
 
 def detail(request, product_type, book_id):
-    book = get_object_or_404(Book.objects.prefetch_related("images", "categories_m2m"), id=book_id)
+    book = get_object_or_404(Product.objects.prefetch_related("images", "categories_m2m"), id=book_id)
     normalized_type = (product_type or "").strip().lower()
-    if normalized_type not in {Book.PRODUCT_TYPE_BOOK, Book.PRODUCT_TYPE_CLOTHING}:
-        return redirect("detail", product_type=book.product_type, book_id=book.id)
 
     if book.product_type != normalized_type:
         return redirect("detail", product_type=book.product_type, book_id=book.id)
@@ -213,13 +211,16 @@ def detail(request, product_type, book_id):
     cover = book.images.filter(is_cover=True).first() or book.images.first()
     book.cover_image = cover.image.url if cover and cover.image else ""
     track_behavior_event(request, event_type="product_detail_view", product=book)
-    is_clothing_detail = book.product_type == Book.PRODUCT_TYPE_CLOTHING
+    is_clothing_detail = book.product_type == Product.PRODUCT_TYPE_CLOTHING
+    is_book_detail = book.product_type == Product.PRODUCT_TYPE_BOOK
     return render(
         request,
-        "book/detail.html",
+        "product/detail.html",
         {
             "book": book,
             "is_clothing_detail": is_clothing_detail,
-            "is_book_detail": not is_clothing_detail,
+            "is_book_detail": is_book_detail,
         },
     )
+
+

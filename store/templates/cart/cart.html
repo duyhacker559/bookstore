@@ -556,7 +556,7 @@
             {% for item in cart %}
             <div class="cart-item">
                 <!-- Product Cover -->
-                <a href="/{{ item.book.id }}/">
+                <a href="/{{ item.product.id }}/">
                     <div class="item-cover">
                         <span class="emoji">📚</span>
                     </div>
@@ -565,14 +565,14 @@
                 <!-- Item Info -->
                 <div class="item-info">
                     <h3 class="item-title">
-                        <a href="/{{ item.book.id }}/">{{ item.book.title }}</a>
+                        <a href="/{{ item.product.id }}/">{{ item.product.title }}</a>
                     </h3>
-                    <p class="item-author">{{ item.book.creator_label }}: {{ item.book.creator_display }}</p>
+                    <p class="item-author">{{ item.product.creator_label }}: {{ item.product.creator_display }}</p>
                     
                     <div class="item-meta">
                         <span class="meta-item">
                             <span>⭐</span>
-                            <span>{{ item.book.rating|default:"4.5" }}</span>
+                            <span>{{ item.product.rating|default:"4.5" }}</span>
                         </span>
                         <span class="stock-badge">
                             <span class="stock-indicator"></span>
@@ -580,7 +580,7 @@
                         </span>
                         <span class="meta-item">
                             <span>📖</span>
-                            <span>{{ item.book.categories_display|default:"Fiction" }}</span>
+                            <span>{{ item.product.categories_display|default:"Fiction" }}</span>
                         </span>
                     </div>
                 </div>
@@ -588,25 +588,25 @@
                 <!-- Item Controls -->
                 <div class="item-controls">
                     <div style="text-align: right;">
-                        <div class="item-price">${{ item.book.price }}</div>
-                        <div class="unit-price">${{ item.book.price }} each</div>
+                        <div class="item-price">${{ item.product.price }}</div>
+                        <div class="unit-price">${{ item.product.price }} each</div>
                     </div>
 
                     <!-- Quantity Selector -->
                     <div class="quantity-selector">
-                        <button class="qty-btn" onclick="updateQuantity('{{ item.book.id }}', -1)">−</button>
+                        <button class="qty-btn" onclick="updateQuantity('{{ item.product.id }}', -1)">−</button>
                         <input type="number" 
                                class="qty-input" 
                                value="{{ item.quantity }}" 
                                min="1" 
                                max="10"
-                               id="qty-{{ item.book.id }}"
+                               id="qty-{{ item.product.id }}"
                                readonly>
-                        <button class="qty-btn" onclick="updateQuantity('{{ item.book.id }}', 1)">+</button>
+                        <button class="qty-btn" onclick="updateQuantity('{{ item.product.id }}', 1)">+</button>
                     </div>
 
                     <!-- Remove Button -->
-                    <a href="/remove/{{ item.book.id }}/" class="remove-btn">
+                    <a href="/remove/{{ item.product.id }}/" class="remove-btn">
                         <span>🗑️</span>
                         <span>Remove</span>
                     </a>

@@ -15,7 +15,7 @@ def checkout(request):
     # Ensure customer profile exists
     customer, created = Customer.objects.get_or_create(user=request.user, defaults={'name': request.user.username, 'email': request.user.email})
     
-    total_amount = sum(item.book.price * item.quantity for item in cart.items.all())
+    total_amount = sum(item.product.price * item.quantity for item in cart.items.all())
     
     order = Order.objects.create(
         customer=customer,
@@ -27,12 +27,12 @@ def checkout(request):
     for item in cart.items.all():
         OrderItem.objects.create(
             order=order,
-            book=item.book,
+            product=item.product,
             quantity=item.quantity,
-            price=item.book.price
+            price=item.product.price
         )
-        item.book.stock -= item.quantity # Simple stock management
-        item.book.save()
+        item.product.stock -= item.quantity # Simple stock management
+        item.product.save()
     
     # Clear Cart
     cart.items.all().delete()

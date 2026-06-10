@@ -26,6 +26,6 @@ urlpatterns = [
     path("inbox/updates/", staff_inbox_updates, name="staff_inbox_updates"),
     path("inbox/<int:message_id>/", staff_inbox_thread, name="staff_inbox_thread"),
     path("inbox/<int:message_id>/updates/", staff_inbox_thread_updates, name="staff_inbox_thread_updates"),
-    path("ai/train/", staff_ai_train_model, name="staff_ai_train_model"),
     path("analytics/", staff_analytics, name="staff_analytics"),
+    path("ai/train/", staff_ai_train_model, name="staff_ai_train_model"),
 ]

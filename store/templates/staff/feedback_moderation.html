@@ -46,23 +46,7 @@ tr:hover td{background:#f8fafc;}
 </style>
 
 <div class="staff-wrap">
-  <aside class="staff-sidebar">
-    <div class="brand">🏪 Staff Panel</div>
-    <nav>
-      <a href="{% url 'staff_home' %}">🏠 Dashboard</a>
-      <div class="nav-section">Catalogue</div>
-      <a href="{% url 'staff_books' %}">📦 All Products</a>
-      <a href="{% url 'staff_books' %}?product_type=book">📚 Books</a>
-      <a href="{% url 'staff_books' %}?product_type=clothing">👕 Clothing</a>
-      <div class="nav-section">Orders</div>
-      <a href="{% url 'staff_manage_shipments' %}">🚚 Shipments</a>
-      <div class="nav-section">Community</div>
-      <a href="{% url 'staff_feedback_moderation' %}" class="active">🛡 Moderation</a>
-      <a href="{% url 'staff_inbox' %}">📥 Inbox{% if staff_inbox_unread_count > 0 %} ({{ staff_inbox_unread_count }}){% endif %}</a>
-      <div class="nav-section">Insights</div>
-      <a href="{% url 'staff_analytics' %}">📊 Analytics</a>
-    </nav>
-  </aside>
+  {% include "staff/_sidebar.html" with active_tab="moderation" %}
 
   <main class="staff-main">
     <div class="page-header">
@@ -142,7 +126,7 @@ tr:hover td{background:#f8fafc;}
               {% for r in ratings %}
               <tr>
                 <td><input type="checkbox" name="selected_ratings" value="{{ r.id }}"></td>
-                <td>{{ r.book.title }}</td>
+                <td>{{ r.product.title }}</td>
                 <td>{{ r.customer.name }}</td>
                 <td>{{ r.score }} ★</td>
                 <td>
@@ -198,7 +182,7 @@ tr:hover td{background:#f8fafc;}
               {% for c in comments %}
               <tr>
                 <td><input type="checkbox" name="selected_comments" value="{{ c.id }}"></td>
-                <td>{{ c.book.title }}</td>
+                <td>{{ c.product.title }}</td>
                 <td>{{ c.customer.name }}</td>
                 <td>{{ c.title }}</td>
                 <td>{{ c.content|truncatechars:140 }}</td>

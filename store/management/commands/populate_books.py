@@ -6,8 +6,8 @@ from django.core.files.base import ContentFile
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
 
-from store.models.product.product import Book
-from store.models.product.product_image import BookImage
+from store.models.product.product import Product
+from store.models.product.product_image import ProductImage
 
 SAMPLE_AUTHORS = [
     "Alice Walker",
@@ -47,7 +47,7 @@ SAMPLE_CATEGORIES = [
 
 
 class Command(BaseCommand):
-    help = "Populate the database with sample Book items."
+    help = "Populate the database with sample Product items."
 
     def add_arguments(self, parser):
         parser.add_argument('count', type=int, nargs='?', default=100, help='Number of books to create (default: 100)')
@@ -67,8 +67,8 @@ class Command(BaseCommand):
             return None
 
     def _upsert_product(self, index, product_type):
-        is_clothing = product_type == Book.PRODUCT_TYPE_CLOTHING
-        title = f"Sample Apparel {index}" if is_clothing else f"Sample Book {index}"
+        is_clothing = product_type == Product.PRODUCT_TYPE_CLOTHING
+        title = f"Sample Apparel {index}" if is_clothing else f"Sample Product {index}"
         author = "" if is_clothing else choice(SAMPLE_AUTHORS)
         brand = choice(SAMPLE_BRANDS) if is_clothing else ""
         size_options = choice(SAMPLE_SIZES) if is_clothing else ""
@@ -80,7 +80,7 @@ class Command(BaseCommand):
         category = choice(SAMPLE_CATEGORIES)
         description = f"This is a sample description for {title}. Generated on {timezone.now().date()}"
 
-        obj, created_flag = Book.objects.update_or_create(
+        obj, created_flag = Product.objects.update_or_create(
             title=title,
             defaults={
                 'author': author,
@@ -99,8 +99,8 @@ class Command(BaseCommand):
         )
         return obj, created_flag
 
-    def _attach_cover(self, book, index, product_type, refresh_images=False):
-        cover = book.images.filter(is_cover=True).first() or book.images.first()
+    def _attach_cover(self, Product, index, product_type, refresh_images=False):
+        cover = Product.images.filter(is_cover=True).first() or Product.images.first()
         if cover and cover.image and not refresh_images:
             return False
 
@@ -109,9 +109,9 @@ class Command(BaseCommand):
             return False
 
         if not cover:
-            cover = BookImage.objects.create(book=book, is_cover=True)
+            cover = ProductImage.objects.create(Product=Product, is_cover=True)
 
-        filename = f"{product_type}_{book.id}_{index}.jpg"
+        filename = f"{product_type}_{Product.id}_{index}.jpg"
         cover.image.save(filename, ContentFile(img_bytes), save=True)
         return True
 
@@ -126,28 +126,28 @@ class Command(BaseCommand):
         updated = 0
         images_attached = 0
 
-        # Always generate book products from the primary count.
+        # Always generate Product products from the primary count.
         for i in range(start, start + count):
-            obj, created_flag = self._upsert_product(i, Book.PRODUCT_TYPE_BOOK)
+            obj, created_flag = self._upsert_product(i, Product.PRODUCT_TYPE_BOOK)
             if created_flag:
                 created += 1
             else:
                 updated += 1
 
-            if download_images and self._attach_cover(obj, i, Book.PRODUCT_TYPE_BOOK, refresh_images=refresh_images):
+            if download_images and self._attach_cover(obj, i, Product.PRODUCT_TYPE_BOOK, refresh_images=refresh_images):
                 images_attached += 1
 
         # Optionally generate dedicated clothing products.
         if include_clothing:
             clothing_start = start + count
             for i in range(clothing_start, clothing_start + clothing_count):
-                obj, created_flag = self._upsert_product(i, Book.PRODUCT_TYPE_CLOTHING)
+                obj, created_flag = self._upsert_product(i, Product.PRODUCT_TYPE_CLOTHING)
                 if created_flag:
                     created += 1
                 else:
                     updated += 1
 
-                if download_images and self._attach_cover(obj, i, Book.PRODUCT_TYPE_CLOTHING, refresh_images=refresh_images):
+                if download_images and self._attach_cover(obj, i, Product.PRODUCT_TYPE_CLOTHING, refresh_images=refresh_images):
                     images_attached += 1
 
         total_target = count + (clothing_count if include_clothing else 0)
@@ -157,3 +157,4 @@ class Command(BaseCommand):
         if download_images:
             summary += f" | cover images downloaded: {images_attached}"
         self.stdout.write(self.style.SUCCESS(summary))
+

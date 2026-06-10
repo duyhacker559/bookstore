@@ -1,5 +1,5 @@
 from django.db import models
-from store.models.product.product import Book
+from store.models.product.product import Product
 from store.models.customer.customer import Customer
 
 class Order(models.Model):
@@ -10,3 +10,4 @@ class Order(models.Model):
 
     class Meta:
         app_label = 'store'
+

@@ -20,5 +20,4 @@ urlpatterns = [
     path("settings/password/", views.change_password, name="customer_change_password"),
     path("ai/chat/", views.ai_chat_widget, name="customer_ai_chat"),
     path("ai/recommend/", views.ai_recommend_widget, name="customer_ai_recommend"),
-    path("ai/train/", views.ai_train_model_widget, name="customer_ai_train_model"),
 ]

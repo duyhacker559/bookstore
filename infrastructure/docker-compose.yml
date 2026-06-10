@@ -1,0 +1,159 @@
+name: bookstore-target-layout
+
+x-service-env: &service-env
+  DEBUG: "true"
+  SERVICE_AUTH_TOKEN: bookstore-internal-token
+
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: bookstore-gateway
+    volumes:
+      - ../gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: ../user-service
+      dockerfile: Dockerfile
+    container_name: bookstore-user-service
+    command: uvicorn app:app --host 0.0.0.0 --port 8000
+    environment:
+      <<: *service-env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  product-service:
+    build:
+      context: ../product-service
+      dockerfile: Dockerfile
+    container_name: bookstore-product-service
+    command: uvicorn app:app --host 0.0.0.0 --port 8001
+    environment:
+      <<: *service-env
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  cart-service:
+    build:
+      context: ../cart-service
+      dockerfile: Dockerfile
+    container_name: bookstore-cart-service
+    command: uvicorn app:app --host 0.0.0.0 --port 8002
+    environment:
+      <<: *service-env
+    ports:
+      - "8002:8002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    build:
+      context: ../order-service
+      dockerfile: Dockerfile
+    container_name: bookstore-order-service
+    command: uvicorn app:app --host 0.0.0.0 --port 8003
+    environment:
+      <<: *service-env
+    ports:
+      - "8003:8003"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  payment-service:
+    build:
+      context: ../payment-service
+      dockerfile: Dockerfile
+    container_name: bookstore-payment-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5000 --reload
+    volumes:
+      - ../payment-service:/app
+    environment:
+      - DEBUG=True
+      - SERVICE_AUTH_TOKEN=bookstore-internal-token
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile
+    container_name: bookstore-ai-service
+    command: uvicorn app:app --host 0.0.0.0 --port 5006 --reload
+    volumes:
+      - ../ai-service:/app
+    environment:
+      - DEBUG=True
+      - AUTH_TOKEN=ai-service-token-123
+      - NEO4J_URI=neo4j://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=neo4j_password
+      - NEO4J_DATABASE=neo4j
+    ports:
+      - "5006:5006"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5006/health', timeout=3).read()"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+
+  neo4j:
+    image: neo4j:5.24-community
+    container_name: bookstore-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/neo4j_password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "neo4j_password", "RETURN 1;"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+
+networks:
+  default:
+    name: bookstore-target-network

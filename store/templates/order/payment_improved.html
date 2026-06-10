@@ -59,7 +59,7 @@
                 {% if order.items.all %}
                     {% for item in order.items.all %}
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #bfdbfe;">
-                        <span style="color: #1e293b;">{{ item.quantity }}x {{ item.book.title }}</span>
+                        <span style="color: #1e293b;">{{ item.quantity }}x {{ item.product.title }}</span>
                         <span style="color: #2563eb; font-weight: 600;">${{ item.price|floatformat:2 }}</span>
                     </div>
                     {% endfor %}

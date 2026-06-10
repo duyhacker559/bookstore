@@ -3,18 +3,16 @@ import json
 from django.http import JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import model_to_dict
-from store.models.product.product import Book
+from store.models.product.product import Product
 from store.models.author.author import Author
 from store.auth import require_api_auth
-from store.behavior_client import BehaviorClient, BehaviorServiceError, BehaviorServiceUnavailable
-from store.rag_client import RAGClient, RAGServiceError, RAGServiceUnavailable
-from store.ai_behavior_client import AIBehaviorClient, AIBehaviorServiceError, AIBehaviorServiceUnavailable
+from store.ai_service_client import AIServiceClient, AIServiceError, AIServiceUnavailable
 
 
 @require_api_auth
 def product_list_api(request):
     """Get all books - Requires authentication"""
-    books = Book.objects.prefetch_related("categories_m2m").all()
+    books = Product.objects.prefetch_related("categories_m2m").all()
     data = [
         {
             "id": b.id,
@@ -30,16 +28,16 @@ def product_list_api(request):
         }
         for b in books
     ]
-    return JsonResponse({"books": data})
+    return JsonResponse({"products": data})
 
 
 @require_api_auth
 def product_detail_api(request, book_id):
     """Get book details - Requires authentication"""
     try:
-        b = Book.objects.prefetch_related("categories_m2m").get(id=book_id)
-    except Book.DoesNotExist:
-        raise Http404("Book not found")
+        b = Product.objects.prefetch_related("categories_m2m").get(id=book_id)
+    except Product.DoesNotExist:
+        raise Http404("Product not found")
     data = model_to_dict(
         b,
         fields=[
@@ -62,7 +60,7 @@ def product_detail_api(request, book_id):
     data["creator"] = b.creator_display
     data["category"] = b.primary_category
     data["categories"] = b.category_names
-    return JsonResponse({"book": data})
+    return JsonResponse({"product": data})
 
 
 @require_api_auth
@@ -110,17 +108,22 @@ def ai_recommend_gateway(request):
     top_k = payload.get("top_k", 5)
     candidate_product_ids = payload.get("candidate_product_ids", [])
 
-    client = BehaviorClient()
+    client = AIServiceClient()
     try:
         result = client.recommend(
             user_id=int(user_id),
             candidate_product_ids=candidate_product_ids,
+            candidate_products=payload.get("candidate_products", []),
+            events=payload.get("events", []),
+            session_events=payload.get("session_events", []),
+            query=payload.get("query", ""),
+            context=payload.get("context", {}),
             top_k=int(top_k),
         )
         return JsonResponse(result)
-    except BehaviorServiceUnavailable as exc:
+    except AIServiceUnavailable as exc:
         return JsonResponse({"error": str(exc)}, status=503)
-    except BehaviorServiceError as exc:
+    except AIServiceError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
 
 
@@ -129,14 +132,13 @@ def ai_recommend_gateway(request):
 def ai_chat_gateway(request):
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
-
     payload = _json_payload(request)
     if payload is None:
         return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
     session_id = payload.get("session_id", "web-session")
     user_id = payload.get("user_id")
-    question = payload.get("question", "").strip()
+    question = str(payload.get("question", "")).strip()
     context = payload.get("context", {})
 
     if not user_id:
@@ -144,161 +146,46 @@ def ai_chat_gateway(request):
     if not question:
         return JsonResponse({"error": "Missing question"}, status=400)
 
-    client = RAGClient()
-    try:
-        result = client.query_chat(
-            session_id=session_id,
-            user_id=int(user_id),
-            question=question,
-            context=context,
-        )
-        return JsonResponse(result)
-    except RAGServiceUnavailable as exc:
-        return JsonResponse({"error": str(exc)}, status=503)
-    except RAGServiceError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
-
-
-@csrf_exempt
-@require_api_auth
-def ai_advanced_recommend_gateway(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
-
-    payload = _json_payload(request)
-    if payload is None:
-        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
-
-    user_id = payload.get("user_id")
-    if not user_id:
-        return JsonResponse({"error": "Missing user_id"}, status=400)
-
-    top_k = payload.get("top_k", 5)
     candidate_products = payload.get("candidate_products", [])
+    if candidate_products:
+        for product in candidate_products:
+            if "id" in product and "product_id" not in product:
+                product["product_id"] = product["id"]
+    
+    if not candidate_products:
+        books = Product.objects.prefetch_related("categories_m2m").all()
+        candidate_products = [
+            {
+                "product_id": b.id,
+                "title": b.title,
+                "product_type": b.product_type,
+                "author": b.author,
+                "brand": b.brand,
+                "creator": b.creator_display,
+                "price": float(b.price) if b.price else None,
+                "stock": b.stock,
+                "category": b.primary_category,
+                "categories": b.category_names,
+            }
+            for b in books
+        ]
 
-    client = AIBehaviorClient()
-    try:
-        result = client.recommend(
-            user_id=int(user_id),
-            top_k=int(top_k),
-            candidate_products=candidate_products if isinstance(candidate_products, list) else [],
-        )
-        return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
-        return JsonResponse({"error": str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
-
-
-@csrf_exempt
-@require_api_auth
-def ai_advanced_chat_gateway(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
-
-    payload = _json_payload(request)
-    if payload is None:
-        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
-
-    user_id = payload.get("user_id")
-    question = str(payload.get("question") or "").strip()
-    session_id = str(payload.get("session_id") or "web-session")
-    context = payload.get("context") if isinstance(payload.get("context"), dict) else {}
-
-    if not user_id:
-        return JsonResponse({"error": "Missing user_id"}, status=400)
-    if not question:
-        return JsonResponse({"error": "Missing question"}, status=400)
-
-    client = AIBehaviorClient()
+    client = AIServiceClient()
     try:
         result = client.chat(
             user_id=int(user_id),
-            question=question,
             session_id=session_id,
+            question=question,
+            candidate_products=candidate_products,
+            events=payload.get("events", []),
+            session_events=payload.get("session_events", []),
             context=context,
+            top_k=int(payload.get("top_k", 5)),
         )
         return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
+    except AIServiceUnavailable as exc:
         return JsonResponse({"error": str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
+    except AIServiceError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
 
 
-@csrf_exempt
-@require_api_auth
-def ai_advanced_events_gateway(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
-
-    payload = _json_payload(request)
-    if payload is None:
-        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
-
-    client = AIBehaviorClient()
-    try:
-        if isinstance(payload.get("events"), list):
-            result = client.ingest_batch(payload.get("events") or [])
-        else:
-            result = client.ingest_event(payload)
-        return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
-        return JsonResponse({"error": str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
-
-
-@csrf_exempt
-@require_api_auth
-def ai_advanced_train_gateway(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
-
-    payload = _json_payload(request)
-    if payload is None:
-        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
-
-    min_events = payload.get("min_events", 50)
-    client = AIBehaviorClient()
-    try:
-        result = client.train(min_events=int(min_events))
-        return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
-        return JsonResponse({"error": str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
-
-
-@require_api_auth
-def ai_advanced_trends_gateway(request):
-    if request.method != "GET":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
-
-    try:
-        top_k = int(request.GET.get("top_k", "5"))
-    except ValueError:
-        return JsonResponse({"error": "Invalid top_k"}, status=400)
-
-    client = AIBehaviorClient()
-    try:
-        result = client.trends(top_k=top_k)
-        return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
-        return JsonResponse({"error": str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
-
-
-@require_api_auth
-def ai_advanced_alerts_gateway(request):
-    if request.method != "GET":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
-
-    client = AIBehaviorClient()
-    try:
-        result = client.alerts()
-        return JsonResponse(result)
-    except AIBehaviorServiceUnavailable as exc:
-        return JsonResponse({"error": str(exc)}, status=503)
-    except AIBehaviorServiceError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)

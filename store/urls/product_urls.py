@@ -12,17 +12,11 @@ from store.controllers.api_views import (
     author_detail_api,
     ai_recommend_gateway,
     ai_chat_gateway,
-    ai_advanced_recommend_gateway,
-    ai_advanced_chat_gateway,
-    ai_advanced_events_gateway,
-    ai_advanced_train_gateway,
-    ai_advanced_trends_gateway,
-    ai_advanced_alerts_gateway,
 )
 
 urlpatterns = [
     path("", home, name="home"),
-    path("books/", catalog, name="catalog"),
+    path("products/", catalog, name="catalog"),
     path("clothing/", catalog_redirect, name="catalog_redirect"),
     path("cart/", cart_view, name="cart"),
     path("cart/update/<int:book_id>/", update_cart_quantity, name="update_cart_quantity"),
@@ -40,17 +34,11 @@ urlpatterns = [
     path("<int:book_id>/", detail_redirect, name="detail_redirect"),
     
     # JSON API endpoints
-    path("api/books/", product_list_api, name="api_product_list"),
-    path("api/books/<int:book_id>/", product_detail_api, name="api_product_detail"),
+    path("api/products/", product_list_api, name="api_product_list"),
+    path("api/products/<int:book_id>/", product_detail_api, name="api_product_detail"),
     path("api/authors/", author_list_api, name="api_author_list"),
     path("api/authors/<int:author_id>/", author_detail_api, name="api_author_detail"),
-    path("api/books/<int:book_id>/ratings/", get_ratings_api, name="api_ratings"),
+    path("api/products/<int:book_id>/ratings/", get_ratings_api, name="api_ratings"),
     path("api/ai/recommend/", ai_recommend_gateway, name="api_ai_recommend"),
     path("api/ai/chat/", ai_chat_gateway, name="api_ai_chat"),
-    path("api/ai/advanced/recommend/", ai_advanced_recommend_gateway, name="api_ai_advanced_recommend"),
-    path("api/ai/advanced/chat/", ai_advanced_chat_gateway, name="api_ai_advanced_chat"),
-    path("api/ai/advanced/events/", ai_advanced_events_gateway, name="api_ai_advanced_events"),
-    path("api/ai/advanced/train/", ai_advanced_train_gateway, name="api_ai_advanced_train"),
-    path("api/ai/advanced/trends/", ai_advanced_trends_gateway, name="api_ai_advanced_trends"),
-    path("api/ai/advanced/alerts/", ai_advanced_alerts_gateway, name="api_ai_advanced_alerts"),
 ]
