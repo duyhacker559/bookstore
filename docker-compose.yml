@@ -1,25 +1,6 @@
 name: store
 
 services:
-  # MySQL Database (for Django monolith migration target)
-  mysql:
-    image: mysql:8.0
-    container_name: store-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-store}
-      MYSQL_USER: ${MYSQL_USER:-store}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-store_password}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    ports:
-      - "${MYSQL_HOST_PORT:-3307}:3306"
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u${MYSQL_USER:-store} -p${MYSQL_PASSWORD:-store_password}"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
   # PostgreSQL Database (shared)
   postgres:
     image: postgres:14
@@ -72,7 +53,7 @@ services:
       - DEBUG=True
       - DJANGO_DB_ENGINE=${DJANGO_DB_ENGINE:-sqlite3}
       - SQLITE_PATH=${SQLITE_PATH:-/app/db.sqlite3}
-      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_HOST=${MYSQL_HOST:-host.docker.internal}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-store}
       - MYSQL_USER=${MYSQL_USER:-store}
@@ -89,8 +70,6 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
     depends_on:
-      mysql:
-        condition: service_healthy
       postgres:
         condition: service_healthy
       rabbitmq:
@@ -256,7 +235,6 @@ services:
       retries: 3
 
 volumes:
-  mysql_data:
   postgres_data:
   rabbitmq_data:
   neo4j_data:

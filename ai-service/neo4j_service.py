@@ -171,6 +171,64 @@ class Neo4jService:
         ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)[: max(1, top_k)]
         return [GraphRecommendation(product_id=product_id, score=float(score), source="graph-fallback") for product_id, score in ranked]
 
+    def query_personalized_message(self, user_id: int, message: str, top_k: int = 5) -> List[GraphRecommendation]:
+        """Search products by text AND boost results based on the user's behavior history."""
+        if self.driver is not None:
+            try:
+                with self.driver.session(database=self.database) as session:
+                    rows = session.execute_read(self._query_personalized_message_tx, int(user_id), message, int(top_k))
+                return [GraphRecommendation(**row) for row in rows]
+            except Exception:
+                self.close()
+                self.driver = None
+
+        # Fallback: combine text matching with user behavior scores
+        keywords = {token.strip().lower() for token in message.split() if token.strip()}
+        scores: Dict[int, float] = defaultdict(float)
+
+        for product_id, product in self._fallback_products.items():
+            haystack = f"{product.get('title', '')} {product.get('description', '')} {product.get('category', '')}".lower()
+            text_score = float(sum(1 for kw in keywords if kw and kw in haystack))
+            if text_score <= 0:
+                continue
+
+            # Direct user interaction score
+            direct_score = self._fallback_user_edges.get(int(user_id), {}).get(product_id, 0.0)
+
+            # Similar product interaction score
+            similar_score = 0.0
+            for interacted_id, interaction_weight in self._fallback_user_edges.get(int(user_id), {}).items():
+                similar_score += interaction_weight * self._fallback_similar.get(interacted_id, {}).get(product_id, 0.0)
+
+            total = text_score + direct_score + similar_score
+            scores[product_id] = total
+
+        ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)[: max(1, top_k)]
+        return [GraphRecommendation(product_id=pid, score=float(s), source="graph-personalized") for pid, s in ranked]
+
+    def _query_personalized_message_tx(self, tx, user_id: int, message: str, top_k: int) -> List[Dict[str, Any]]:
+        query = """
+        WITH toLower($message) AS message
+        MATCH (p:Product)
+        WITH p, reduce(score = 0.0, token IN split(message, ' ') | score + CASE WHEN token <> '' AND toLower(p.title) CONTAINS token THEN 1.0 ELSE 0.0 END) AS text_score
+        WHERE text_score > 0
+        OPTIONAL MATCH (u:User {user_id: $user_id})-[r:VIEW|BUY]->(p)
+        OPTIONAL MATCH (u:User {user_id: $user_id})-[r2:VIEW|BUY]->(p2:Product)-[s:SIMILAR]->(p)
+        WITH p.product_id AS product_id,
+             text_score,
+             sum(CASE type(r) WHEN 'BUY' THEN 1.0 WHEN 'VIEW' THEN 0.4 ELSE 0.0 END) AS direct_score,
+             sum((CASE type(r2) WHEN 'BUY' THEN 1.0 WHEN 'VIEW' THEN 0.4 ELSE 0.0 END) * coalesce(s.weight, 0)) AS similar_score
+        RETURN product_id, (text_score + direct_score + similar_score) AS score
+        ORDER BY score DESC
+        LIMIT $top_k
+        """
+        rows = tx.run(query, user_id=user_id, message=message, top_k=top_k)
+        return [
+            {"product_id": int(row["product_id"]), "score": float(row["score"] or 0.0), "source": "neo4j-personalized"}
+            for row in rows
+            if row["product_id"] is not None
+        ]
+
     def query_from_message(self, message: str, top_k: int = 5) -> List[GraphRecommendation]:
         if self.driver is not None:
             try:

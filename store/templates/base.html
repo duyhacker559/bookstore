@@ -1062,7 +1062,7 @@
         <div class="ai-chat-actions">
             <button type="button" class="ai-chat-action-btn" id="aiQuickRecommend">Suggest for me</button>
             <button type="button" class="ai-chat-action-btn" id="aiQuickBudget">Under 20 budget</button>
-            <button type="button" class="ai-chat-action-btn" id="aiQuickPython">Python starter books</button>
+            <button type="button" class="ai-chat-action-btn" id="aiQuickPython">Highly rated products</button>
         </div>
         <div class="ai-chat-log" id="aiChatLog">
             <div class="ai-msg bot">Hello. Ask me what you need and I will suggest suitable products.</div>
@@ -1422,7 +1422,7 @@
 
         aiQuickRecommend?.addEventListener('click', () => sendAiRecommend(3));
         aiQuickBudget?.addEventListener('click', () => sendAiQuestion('Suggest products under 20 budget', { budget_max: 20 }));
-        aiQuickPython?.addEventListener('click', () => sendAiQuestion('Suggest Python books for beginners', { preferred_category: 'technology' }));
+        aiQuickPython?.addEventListener('click', () => sendAiQuestion('Suggest highly rated products from various categories', { preferred_category: '' }));
         {% endif %}
     </script>
 
